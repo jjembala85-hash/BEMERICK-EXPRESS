@@ -1,12 +1,6 @@
-import { SiteHeader } from "@/components/site-header";
+import { SiteChrome } from "@/components/site-chrome";
 import { SiteFooter } from "@/components/site-footer";
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <>
-      <SiteHeader />
-      <main className="flex-1">{children}</main>
-      <SiteFooter />
-    </>
-  );
+  return <SiteChrome footer={<SiteFooter />}>{children}</SiteChrome>;
 }
