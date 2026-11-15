@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 152" width="1440" height="152">
+  <title>Website header + breaking banner + live banner (visual spec, draft)</title>
+  <!-- Header -->
+  <rect width="1440" height="56" fill="#0E3B43"/>
+  <g transform="translate(24 10) scale(0.5625)">
+    <rect width="64" height="64" rx="12" fill="#FAF7F2"/>
+    <rect x="10" y="16" width="6" height="33" fill="#0E3B43"/>
+    <path d="M13 19 h9 a6.5 6.5 0 0 1 0 13 h-9 M13 32 h10 a7 7 0 0 1 0 14 h-10" fill="none" stroke="#0E3B43" stroke-width="6"/>
+    <path d="M38 17 L54 47" stroke="#0E3B43" stroke-width="6" stroke-linecap="square"/>
+    <path d="M54 17 L38 47" stroke="#D9A441" stroke-width="6" stroke-linecap="square"/>
+  </g>
+  <text x="72" y="36" font-family="Newsreader, Georgia, serif" font-weight="700" font-size="22" fill="#FFFFFF" letter-spacing="1">BEMERICK EXPRESS</text>
+  <text font-family="'Instrument Sans', 'Segoe UI', Arial, sans-serif" font-weight="600" font-size="15" fill="#FFFFFF">
+    <tspan x="420" y="34">Uganda</tspan><tspan x="500" y="34">Politics</tspan><tspan x="580" y="34">Business</tspan><tspan x="668" y="34">Sports</tspan><tspan x="740" y="34">World</tspan><tspan x="806" y="34">Opinion</tspan><tspan x="886" y="34">More ▾</tspan>
+  </text>
+  <text x="1300" y="34" font-family="'Instrument Sans', 'Segoe UI', Arial, sans-serif" font-size="15" fill="#E4ECEA">🔍  Subscribe</text>
+  <!-- Breaking banner -->
+  <rect y="56" width="1440" height="48" fill="#C8401F"/>
+  <circle cx="34" cy="80" r="6" fill="#FFFFFF"/>
+  <circle cx="34" cy="80" r="11" fill="none" stroke="#FFFFFF" stroke-opacity="0.5" stroke-width="2"/>
+  <text x="54" y="86" font-family="'Instrument Sans', 'Segoe UI', Arial, sans-serif" font-weight="700" font-size="15" letter-spacing="2.5" fill="#FFFFFF">BREAKING</text>
+  <rect x="152" y="68" width="1" height="24" fill="#FFFFFF" opacity="0.5"/>
+  <text x="170" y="87" font-family="Newsreader, Georgia, serif" font-weight="600" font-size="19" fill="#FFFFFF">Breaking headline links to the full story →</text>
+  <text x="1412" y="87" text-anchor="end" font-family="Arial, sans-serif" font-size="20" fill="#FFFFFF">×</text>
+  <!-- Live variant -->
+  <rect y="104" width="1440" height="48" fill="#082A30"/>
+  <rect x="20" y="116" width="62" height="24" rx="4" fill="#C8401F"/>
+  <circle cx="34" cy="128" r="5" fill="#FFFFFF"/>
+  <text x="44" y="133" font-family="'Instrument Sans', 'Segoe UI', Arial, sans-serif" font-weight="700" font-size="13" letter-spacing="1.5" fill="#FFFFFF">LIVE</text>
+  <text x="100" y="135" font-family="Newsreader, Georgia, serif" font-weight="600" font-size="19" fill="#FFFFFF">BX News Evening Bulletin: watch now →</text>
+</svg>

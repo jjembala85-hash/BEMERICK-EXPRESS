@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 470 120" width="470" height="120" role="img" aria-label="BEMERICK EXPRESS">
+  <title>BEMERICK EXPRESS wordmark, reverse (draft)</title>
+  <rect width="470" height="120" fill="#0E3B43"/>
+  <g transform="translate(8 16) scale(1.375)">
+    <rect width="64" height="64" rx="12" fill="#FAF7F2"/>
+    <rect x="10" y="16" width="6" height="33" fill="#0E3B43"/>
+    <path d="M13 19 h9 a6.5 6.5 0 0 1 0 13 h-9 M13 32 h10 a7 7 0 0 1 0 14 h-10" fill="none" stroke="#0E3B43" stroke-width="6"/>
+    <path d="M38 17 L54 47" stroke="#0E3B43" stroke-width="6" stroke-linecap="square"/>
+    <path d="M54 17 L38 47" stroke="#D9A441" stroke-width="6" stroke-linecap="square"/>
+  </g>
+  <text x="114" y="66" font-family="Newsreader, Georgia, 'Times New Roman', serif" font-weight="700" font-size="54" fill="#FFFFFF" letter-spacing="1">BEMERICK</text>
+  <rect x="116" y="78" width="333" height="2" fill="#D9A441"/>
+  <text x="116" y="104" font-family="'Instrument Sans', 'Segoe UI', Arial, sans-serif" font-weight="600" font-size="22" fill="#FFFFFF" letter-spacing="32.5">EXPRESS</text>
+</svg>

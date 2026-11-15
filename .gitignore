@@ -1,0 +1,27 @@
+# Secrets: never commit
+.env
+.env.*
+!.env.example
+.dev.vars
+*.pem
+
+# Dependencies & builds
+node_modules/
+.next/
+.open-next/
+.wrangler/
+out/
+dist/
+coverage/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+~$*
+.vscode/*
+!.vscode/extensions.json
+
+# Logs
+*.log
+npm-debug.log*
