@@ -53,8 +53,8 @@ gantt
 | 0.4 | Reserve `bxnews` handles: WhatsApp Channel, TikTok, X, YouTube, Facebook, Instagram | 🟦 WhatsApp Channel created 15 Nov and linked in the footer; others pending |
 | 0.5 | Create free accounts: Cloudflare, Neon, Resend, Sentry | 🟦 Cloudflare and Neon connected 15 Nov; Resend and Sentry later |
 | 0.6 | Create Next.js app in `app/` with OpenNext Cloudflare | ✅ 15 Nov (Next.js 16.4; builds for Workers; brand colours and fonts applied) |
-| 0.7 | **Spike:** deploy skeleton (home + article from Neon + login) to Workers free plan; record results | 🟦 Part 1 passed 15 Nov: site frame live at `bemerick-express.bemerick-express.workers.dev`, bundle ~1.06 MB compressed (free limit 3 MB). Still to test: a page reading from Neon, and login |
-| 0.8 | Record hosting decision (D-008) in Decisions Log | 🟦 Interim result recorded (D-022) |
+| 0.7 | **Spike:** deploy skeleton (home + article from Neon + login) to Workers free plan; record results | ✅ 15 Nov: live at `bemerick-express.bemerick-express.workers.dev`. Bundle 1.88 MB compressed (limit 3 MB); dashboard reads from Neon `main`; real sign-ins succeed, no CPU-limit errors |
+| 0.8 | Record hosting decision (D-008) in Decisions Log | ✅ 15 Nov (D-024) |
 
 **Done when:** a page that reads from Neon is live on a `workers.dev` URL, and the hosting decision is recorded.
 
@@ -62,13 +62,13 @@ gantt
 
 | # | Task | Status |
 |---|------|--------|
-| 1.1 | Drizzle schema + first migration: staff_profile, section, tag, article, article_translation, article_author, article_tag, media, audit_log | ⬜ |
-| 1.2 | Better Auth: email+password, sign-up disabled, admin plugin, roles Admin/Editor/Writer | ⬜ |
-| 1.3 | First-admin setup script | ⬜ |
-| 1.4 | `/newsroom` layout with server-side session + role check | ⬜ |
-| 1.5 | `can(user, permission)` helper + tests | ⬜ |
+| 1.1 | Drizzle schema + first migration: staff_profile, section, tag, article, article_translation, article_author, article_tag, media, audit_log | ✅ 15 Nov (13 tables, migration `0000`, applied to `dev` and `main`) |
+| 1.2 | Better Auth: email+password, sign-up disabled, admin plugin, roles Admin/Editor/Writer | ✅ 15 Nov |
+| 1.3 | First-admin setup script | ✅ 15 Nov (`npm run create-admin` and one-time `/newsroom/setup` page) |
+| 1.4 | `/newsroom` layout with server-side session + role check | ✅ 15 Nov |
+| 1.5 | `can(user, permission)` helper + tests | 🟦 Helper built; automated tests still to write |
 | 1.6 | Seed sections | ⬜ |
-| 1.7 | Brand tokens + fonts in Tailwind config | ⬜ |
+| 1.7 | Brand tokens + fonts in Tailwind config | ✅ 15 Nov |
 
 **Done when:** Admin logs in; a signed-out visitor is redirected away from `/newsroom`; a Writer cannot open staff settings.
 
