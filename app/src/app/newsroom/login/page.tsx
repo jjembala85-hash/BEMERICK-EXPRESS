@@ -1,5 +1,28 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { connection } from "next/server";
+import { Suspense } from "react";
+import { needsSetup } from "@/lib/setup";
 import { LoginForm } from "./login-form";
+
+async function LoginFootnote() {
+  await connection(); // checked per visit, never cached
+  if (await needsSetup()) {
+    return (
+      <p className="mt-5 rounded-md bg-mist px-3 py-2.5 text-sm text-ink">
+        No accounts exist yet.{" "}
+        <Link href="/newsroom/setup" className="font-semibold text-lake-ink underline">
+          Create the first administrator
+        </Link>
+      </p>
+    );
+  }
+  return (
+    <p className="mt-5 text-xs text-slate">
+      Accounts are created by an administrator. There is no public sign-up.
+    </p>
+  );
+}
 
 export const metadata: Metadata = { title: "Newsroom sign in" };
 
@@ -16,9 +39,15 @@ export default function LoginPage() {
           </div>
         </div>
         <LoginForm />
-        <p className="mt-5 text-xs text-slate">
-          Accounts are created by an administrator. There is no public sign-up.
-        </p>
+        <Suspense
+          fallback={
+            <p className="mt-5 text-xs text-slate">
+              Accounts are created by an administrator. There is no public sign-up.
+            </p>
+          }
+        >
+          <LoginFootnote />
+        </Suspense>
       </div>
     </main>
   );
