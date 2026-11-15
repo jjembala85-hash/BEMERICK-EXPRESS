@@ -30,6 +30,14 @@ async function NewsroomShell({ children }: { children: React.ReactNode }) {
             <img src="/bx-mark-reverse.svg" alt="" width={30} height={30} />
             <span className="font-serif text-lg font-bold tracking-wide">BX Newsroom</span>
           </Link>
+          <nav aria-label="Newsroom" className="flex items-center gap-1">
+            <Link href="/newsroom" className="rounded px-2.5 py-1.5 text-sm font-semibold hover:bg-white/10">
+              Dashboard
+            </Link>
+            <Link href="/newsroom/stories" className="rounded px-2.5 py-1.5 text-sm font-semibold hover:bg-white/10">
+              Stories
+            </Link>
+          </nav>
           <Link href="/" className="ml-auto hidden text-sm hover:underline sm:block">
             View site
           </Link>

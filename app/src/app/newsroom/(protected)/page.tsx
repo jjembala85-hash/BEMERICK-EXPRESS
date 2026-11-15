@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { count, eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { article } from "@/db/schema";
@@ -40,8 +41,17 @@ export default async function NewsroomDashboard() {
         ))}
       </div>
 
+      <div className="mt-8 flex flex-wrap gap-3">
+        <Link href="/newsroom/stories/new" className="rounded-md bg-brand px-4 py-2.5 font-semibold text-white hover:bg-brand-deep">
+          New story
+        </Link>
+        <Link href="/newsroom/stories" className="rounded-md border border-lake-ink px-4 py-2.5 font-semibold text-lake-ink hover:bg-mist">
+          All stories
+        </Link>
+      </div>
+
       <p className="mt-10 rounded-lg border border-dashed border-mist p-5 text-slate">
-        The story editor, review queue and homepage board arrive in the next build steps.
+        Photo upload, the review queue and the homepage board arrive in the next build steps.
       </p>
     </>
   );

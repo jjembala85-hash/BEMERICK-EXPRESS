@@ -13,12 +13,16 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "auth:schema": "better-auth generate --config auth-cli.ts --output src/db/auth-schema.ts -y",
+    "db:seed": "tsx scripts/seed-sections.ts",
     "create-admin": "tsx scripts/create-admin.ts",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.2.1",
     "@opennextjs/cloudflare": "^1.20.17",
+    "@tiptap/pm": "^3.34.0",
+    "@tiptap/react": "^3.34.0",
+    "@tiptap/starter-kit": "^3.34.0",
     "better-auth": "^1.7.25",
     "drizzle-orm": "^0.45.4",
     "next": "16.4.6",
