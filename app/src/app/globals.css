@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* BX brand tokens: "Lake & Crane" (docs/01-brand-identity.md §2) */
+/* BX brand tokens: "Lake & Crane" (docs/01-brand-identity.md section 2) */
 :root {
   --bx-lake-ink: #0e3b43;
   --bx-deep-lake: #082a30;
@@ -27,6 +27,9 @@
 }
 
 @theme inline {
+  --color-brand: #0e3b43;
+  --color-brand-deep: #082a30;
+  --color-accent: #d9a441;
   --color-lake-ink: var(--bx-lake-ink);
   --color-deep-lake: var(--bx-deep-lake);
   --color-crane-gold: var(--bx-crane-gold);
