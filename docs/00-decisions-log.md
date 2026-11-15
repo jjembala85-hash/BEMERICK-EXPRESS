@@ -27,6 +27,8 @@ Every decision that shapes the product goes here: newest at the bottom, never de
 | D-019 | 2026-11-15 | **Vercel for private previews only; Cloudflare for the live site.** Vercel's free plan does not allow commercial use, so the public, ad-carrying site never runs there | ✅ | Vercel project `bemerickexpress` (team `roadsideapp`) |
 | D-020 | 2026-11-15 | Neon project `bemerick-express` created in Frankfurt (`aws-eu-central-1`) with branches `main` (live) and `dev` (development). D-006 moves from proposed to in use | ✅ | Local app points at `dev` |
 | D-021 | 2026-11-15 | Domain purchase postponed; development continues on the free `workers.dev` address | ⏳ | Q-001 stays open |
+| D-022 | 2026-11-15 | Hosting spike, part 1: Next.js 16 deploys and runs on the Cloudflare Workers **free** plan (bundle ~1.06 MB compressed vs 3 MB limit). Page cache uses static assets for now; the R2 cache upload timed out from the development machine and is deferred to Phase 2 (try from GitHub Actions) | 🟡 | D-008 stays proposed until a database page and login are tested |
+| D-023 | 2026-11-15 | Desktop navigation is a **collapsible left sidebar** (icon rail when collapsed); mobile uses a slide-in drawer plus the section swipe strip. Replaces the top section menu in Blueprint §6.1 | ✅ | Styled with Tailwind CSS, not Bootstrap |
 
 ## Open questions
 

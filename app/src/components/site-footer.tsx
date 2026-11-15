@@ -1,8 +1,15 @@
 import Link from "next/link";
 import { sections, watchLinks, aboutLinks, policyLinks } from "@/lib/sections";
 
-// Social links are placeholders until the handles are reserved (roadmap 0.4).
-const followLinks = ["WhatsApp Channel", "TikTok", "X", "YouTube", "Facebook"];
+// Entries without an href are placeholders until the handles are reserved
+// (roadmap 0.4).
+const followLinks: { name: string; href?: string }[] = [
+  { name: "WhatsApp Channel", href: "https://whatsapp.com/channel/0029VbEIUUY9Gv7XHrIvKs1O" },
+  { name: "TikTok" },
+  { name: "X" },
+  { name: "YouTube" },
+  { name: "Facebook" },
+];
 
 export function SiteFooter() {
   return (
@@ -24,9 +31,22 @@ export function SiteFooter() {
           ))}
         </FooterColumn>
         <FooterColumn title="Follow">
-          {followLinks.map((name) => (
-            <li key={name} className="py-1 text-sm opacity-70">{name}</li>
-          ))}
+          {followLinks.map((l) =>
+            l.href ? (
+              <li key={l.name}>
+                <a
+                  href={l.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block py-1 text-sm hover:text-white hover:underline"
+                >
+                  {l.name}
+                </a>
+              </li>
+            ) : (
+              <li key={l.name} className="py-1 text-sm opacity-70">{l.name}</li>
+            ),
+          )}
         </FooterColumn>
       </div>
       <div className="border-t border-white/10">

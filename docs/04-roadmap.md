@@ -50,11 +50,11 @@ gantt
 | 0.1 | Confirm Node.js LTS, Git, VS Code installed | ✅ Node v24, Git 2.55 confirmed 15 Nov |
 | 0.2 | Push this document repo to GitHub | ✅ 15 Nov |
 | 0.3 | Check domain availability; buy `bemerickexpress.com` (Cloudflare Registrar) | ⬜ Postponed (D-021) |
-| 0.4 | Reserve `bxnews` handles: WhatsApp Channel, TikTok, X, YouTube, Facebook, Instagram | ⬜ |
+| 0.4 | Reserve `bxnews` handles: WhatsApp Channel, TikTok, X, YouTube, Facebook, Instagram | 🟦 WhatsApp Channel created 15 Nov and linked in the footer; others pending |
 | 0.5 | Create free accounts: Cloudflare, Neon, Resend, Sentry | 🟦 Cloudflare and Neon connected 15 Nov; Resend and Sentry later |
 | 0.6 | Create Next.js app in `app/` with OpenNext Cloudflare | ✅ 15 Nov (Next.js 16.4; builds for Workers; brand colours and fonts applied) |
-| 0.7 | **Spike:** deploy skeleton (home + article from Neon + login) to Workers free plan; record results | ⬜ |
-| 0.8 | Record hosting decision (D-008) in Decisions Log | ⬜ |
+| 0.7 | **Spike:** deploy skeleton (home + article from Neon + login) to Workers free plan; record results | 🟦 Part 1 passed 15 Nov: site frame live at `bemerick-express.bemerick-express.workers.dev`, bundle ~1.06 MB compressed (free limit 3 MB). Still to test: a page reading from Neon, and login |
+| 0.8 | Record hosting decision (D-008) in Decisions Log | 🟦 Interim result recorded (D-022) |
 
 **Done when:** a page that reads from Neon is live on a `workers.dev` URL, and the hosting decision is recorded.
 
