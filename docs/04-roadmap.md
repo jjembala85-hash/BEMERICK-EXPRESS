@@ -67,7 +67,7 @@ gantt
 | 1.3 | First-admin setup script | ✅ 15 Nov (`npm run create-admin` and one-time `/newsroom/setup` page) |
 | 1.4 | `/newsroom` layout with server-side session + role check | ✅ 15 Nov |
 | 1.5 | `can(user, permission)` helper + tests | 🟦 Helper built; automated tests still to write |
-| 1.6 | Seed sections | ⬜ |
+| 1.6 | Seed sections | ✅ 15 Nov (`npm run db:seed`, on `dev` and `main`) |
 | 1.7 | Brand tokens + fonts in Tailwind config | ✅ 15 Nov |
 
 **Done when:** Admin logs in; a signed-out visitor is redirected away from `/newsroom`; a Writer cannot open staff settings.
@@ -76,13 +76,13 @@ gantt
 
 | # | Task | Status |
 |---|------|--------|
-| 2.1 | Global layout: header, swipe strip, footer, dark mode | ⬜ |
-| 2.2 | Basic story editor (headline, standfirst, Tiptap body, section, lead photo upload to R2) | ⬜ |
-| 2.3 | Publish / unpublish (admin) | ⬜ |
-| 2.4 | Article page (byline, times, photo + credit, body, related) | ⬜ |
-| 2.5 | Homepage (latest-based) + section pages | ⬜ |
-| 2.6 | Caching + on-publish revalidation | ⬜ |
-| 2.7 | Favicon, manifest, page titles `Headline · BEMERICK EXPRESS` | ⬜ |
+| 2.1 | Global layout: header, swipe strip, footer, dark mode | ✅ 15 Nov (collapsible sidebar, D-023) |
+| 2.2 | Basic story editor (headline, standfirst, Tiptap body, section, lead photo upload to R2) | 🟦 Text editing done 15 Nov; lead photo upload to R2 still to build |
+| 2.3 | Publish / unpublish (admin) | ✅ 15 Nov |
+| 2.4 | Article page (byline, times, photo + credit, body, related) | 🟦 Byline, times, body, share links done; photo + credit and related stories still to build |
+| 2.5 | Homepage (latest-based) + section pages | ✅ 15 Nov |
+| 2.6 | Caching + on-publish revalidation | ⬜ Pages read the database on every visit for now; needs the R2 cache |
+| 2.7 | Favicon, manifest, page titles `Headline · BEMERICK EXPRESS` | 🟦 Tab icon and titles done; web app manifest still to add |
 
 ### 🏁 Milestone 1 · First story live
 Admin signs in → writes a story with a photo → publishes → it appears on the homepage, its section page and its own URL → a signed-out visitor reads it on a phone → drafts are not reachable by URL.
@@ -127,7 +127,7 @@ Translation workflow in newsroom → `/lg` routes → Luganda launch with human-
 
 | Risk | Likelihood | Impact | Mitigation |
 |------|-----------|--------|------------|
-| Next.js exceeds Workers free limits | Medium | Medium | Week-1 spike; caching; Plan B ($5/mo or Astro) |
+| App bundle exceeds the Workers free 3 MB limit (2.14 MB on 15 Nov, growing with each feature) | **High** | Medium | Track size at every deploy; trim dependencies; fallback Workers Paid (~$5/mo) |
 | Free-tier limits change | Medium | Medium | Verify limits; cost path ready (Architecture §11) |
 | Single developer / limited hours | High | High | Strict scope; Milestone 1 before anything else |
 | Not enough content at launch | Medium | High | Start writing in Phase 3; 30-story buffer |

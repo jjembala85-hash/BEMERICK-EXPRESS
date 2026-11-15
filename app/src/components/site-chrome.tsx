@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useSyncExternalStore } from "react";
+import { Suspense, useState, useSyncExternalStore } from "react";
 import { sections } from "@/lib/sections";
 import { Icon } from "@/components/icons";
 
@@ -71,7 +71,6 @@ export function SiteChrome({
   children: React.ReactNode;
   footer: React.ReactNode;
 }) {
-  const pathname = usePathname();
   const collapsed = useSyncExternalStore(subscribe, readCollapsed, () => false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const closeDrawer = () => setDrawerOpen(false);
@@ -119,26 +118,7 @@ export function SiteChrome({
         </div>
 
         {/* Mobile swipe strip */}
-        <nav
-          aria-label="Sections"
-          className="flex gap-1 overflow-x-auto border-t border-white/10 px-2 [scrollbar-width:none] lg:hidden [&::-webkit-scrollbar]:hidden"
-        >
-          {sections.map((s) => {
-            const active = isActive(pathname, `/${s.slug}`);
-            return (
-              <Link
-                key={s.slug}
-                href={`/${s.slug}`}
-                aria-current={active ? "page" : undefined}
-                className={`shrink-0 border-b-2 px-2.5 py-2.5 text-sm font-semibold ${
-                  active ? "border-accent text-accent" : "border-transparent"
-                }`}
-              >
-                {s.name}
-              </Link>
-            );
-          })}
-        </nav>
+        <SectionStrip />
       </header>
 
       <div className="flex flex-1">
@@ -148,7 +128,7 @@ export function SiteChrome({
             collapsed ? "w-16" : "w-60"
           }`}
         >
-          <SidebarNav pathname={pathname} collapsed={collapsed} />
+          <SidebarNav collapsed={collapsed} />
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col">
@@ -187,7 +167,6 @@ export function SiteChrome({
           </div>
           <div className="overflow-y-auto">
             <SidebarNav
-              pathname={pathname}
               collapsed={false}
               onNavigate={closeDrawer}
               focusable={drawerOpen}
@@ -199,7 +178,7 @@ export function SiteChrome({
   );
 }
 
-function SidebarNav({
+function SidebarNavView({
   pathname,
   collapsed,
   onNavigate,
@@ -247,6 +226,60 @@ function SidebarNav({
           </ul>
         </div>
       ))}
+    </nav>
+  );
+}
+
+// usePathname() is only known at request time for story pages, so everything
+// that highlights the current page sits behind Suspense: the menu renders
+// immediately without a highlight, then the highlight streams in.
+type SidebarProps = { collapsed: boolean; onNavigate?: () => void; focusable?: boolean };
+
+function SidebarNav(props: SidebarProps) {
+  return (
+    <Suspense fallback={<SidebarNavView {...props} pathname="" />}>
+      <SidebarNavLive {...props} />
+    </Suspense>
+  );
+}
+
+function SidebarNavLive(props: SidebarProps) {
+  return <SidebarNavView {...props} pathname={usePathname()} />;
+}
+
+function SectionStrip() {
+  return (
+    <Suspense fallback={<SectionStripView pathname="" />}>
+      <SectionStripLive />
+    </Suspense>
+  );
+}
+
+function SectionStripLive() {
+  return <SectionStripView pathname={usePathname()} />;
+}
+
+function SectionStripView({ pathname }: { pathname: string }) {
+  return (
+    <nav
+      aria-label="Sections"
+      className="flex gap-1 overflow-x-auto border-t border-white/10 px-2 [scrollbar-width:none] lg:hidden [&::-webkit-scrollbar]:hidden"
+    >
+      {sections.map((s) => {
+        const active = isActive(pathname, `/${s.slug}`);
+        return (
+          <Link
+            key={s.slug}
+            href={`/${s.slug}`}
+            aria-current={active ? "page" : undefined}
+            className={`shrink-0 border-b-2 px-2.5 py-2.5 text-sm font-semibold ${
+              active ? "border-accent text-accent" : "border-transparent"
+            }`}
+          >
+            {s.name}
+          </Link>
+        );
+      })}
     </nav>
   );
 }
