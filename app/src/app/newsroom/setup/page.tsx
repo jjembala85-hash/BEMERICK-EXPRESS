@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { needsSetup, setupKeyRequired } from "@/lib/setup";
 import { SetupForm } from "./setup-form";
@@ -27,6 +28,7 @@ export default function SetupPage() {
 }
 
 async function SetupGate() {
+  await connection(); // checked per visit, never at build time
   if (!(await needsSetup())) redirect("/newsroom/login");
   return (
     <>
