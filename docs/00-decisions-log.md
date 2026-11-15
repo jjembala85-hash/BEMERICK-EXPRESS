@@ -24,6 +24,9 @@ Every decision that shapes the product goes here: newest at the bottom, never de
 | D-016 | 2026-11-15 | Fonts: **Newsreader** (headlines/body) + **Instrument Sans** (interface) | 🟡 | Free, open licence |
 | D-017 | 2026-11-15 | Clean, short URLs with no language prefix for English, e.g. `bemerickexpress.com/business/story-slug` | 🟡 | Browser tab shows BX icon + "Headline · BEMERICK EXPRESS" |
 | D-018 | 2026-11-15 | Article statuses revised (draft → in review → approved → scheduled/published, plus changes requested, unpublished, spiked) | 🟡 | See [Architecture §6](03-technical-architecture.md#6-article-lifecycle-statuses) |
+| D-019 | 2026-11-15 | **Vercel for private previews only; Cloudflare for the live site.** Vercel's free plan does not allow commercial use, so the public, ad-carrying site never runs there | ✅ | Vercel project `bemerickexpress` (team `roadsideapp`) |
+| D-020 | 2026-11-15 | Neon project `bemerick-express` created in Frankfurt (`aws-eu-central-1`) with branches `main` (live) and `dev` (development). D-006 moves from proposed to in use | ✅ | Local app points at `dev` |
+| D-021 | 2026-11-15 | Domain purchase postponed; development continues on the free `workers.dev` address | ⏳ | Q-001 stays open |
 
 ## Open questions
 

@@ -1,26 +1,48 @@
 @import "tailwindcss";
 
+/* BX brand tokens: "Lake & Crane" (docs/01-brand-identity.md §2) */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --bx-lake-ink: #0e3b43;
+  --bx-deep-lake: #082a30;
+  --bx-crane-gold: #d9a441;
+  --bx-ember: #c8401f;
+  --bx-paper: #faf7f2;
+  --bx-ink: #16191b;
+  --bx-slate: #5b6670;
+  --bx-mist: #e4ecea;
+  --bx-surface: #ffffff;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --bx-paper: #0b1416;
+    --bx-surface: #13221f;
+    --bx-ink: #ece8e1;
+    --bx-slate: #9aa7ad;
+    --bx-lake-ink: #7cc4c0;
+    --bx-crane-gold: #e2b65c;
+    --bx-ember: #e0623f;
+    --bx-mist: #1c2e2c;
   }
 }
 
+@theme inline {
+  --color-lake-ink: var(--bx-lake-ink);
+  --color-deep-lake: var(--bx-deep-lake);
+  --color-crane-gold: var(--bx-crane-gold);
+  --color-ember: var(--bx-ember);
+  --color-paper: var(--bx-paper);
+  --color-ink: var(--bx-ink);
+  --color-slate: var(--bx-slate);
+  --color-mist: var(--bx-mist);
+  --color-surface: var(--bx-surface);
+  --font-serif: var(--font-newsreader), Georgia, "Times New Roman", serif;
+  --font-sans: var(--font-instrument-sans), system-ui, -apple-system, "Segoe UI",
+    Roboto, sans-serif;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bx-paper);
+  color: var(--bx-ink);
+  font-family: var(--font-sans);
 }
