@@ -44,17 +44,25 @@ export async function putMedia(key: string, body: ArrayBuffer, contentType: stri
     service: "s3",
     region: "auto",
   });
-  const res = await client.fetch(
+  // Sign first, then send the bytes ourselves. client.fetch() wraps the body in a
+  // streamed Request, which drops Content-Length; R2 then refuses it (411).
+  const signed = await client.sign(
     `https://${config.accountId}.r2.cloudflarestorage.com/${config.bucket}/${key}`,
     {
       method: "PUT",
-      body,
       headers: {
         "Content-Type": contentType,
         "Cache-Control": "public, max-age=31536000, immutable",
+        "X-Amz-Content-Sha256": "UNSIGNED-PAYLOAD",
       },
     },
   );
+  const res = await fetch(signed.url, {
+    method: "PUT",
+    headers: signed.headers,
+    body: new Uint8Array(body),
+    cache: "no-store",
+  });
   if (!res.ok) throw new Error(`Photo storage refused the upload (${res.status})`);
 }
 

@@ -1,10 +1,13 @@
 // The ONLY place public pages read stories from. Every query goes through
 // isPublic(), so drafts and unpublished stories can never leak to readers.
 import { and, desc, eq, lte } from "drizzle-orm";
+import { connection } from "next/server";
 import { getDb } from "@/db";
 import { article, articleAuthor, articleTranslation, media, section, staffProfile } from "@/db/schema";
 import { toPhoto } from "@/lib/media";
 
+// "Now" must be read on a real visit, not while Next.js prerenders or prefetches,
+// so every query below awaits connection() before calling isPublic().
 const isPublic = () =>
   and(eq(article.status, "published"), lte(article.publishedAt, new Date()));
 
@@ -33,6 +36,7 @@ export type StoryCard = Awaited<ReturnType<typeof getLatestStories>>[number];
 
 export async function getLatestStories(options: { limit?: number; sectionSlug?: string; lang?: string } = {}) {
   const { limit = 20, sectionSlug, lang = "en" } = options;
+  await connection();
   const rows = await getDb()
     .select(cardFields)
     .from(article)
@@ -52,6 +56,7 @@ export async function getLatestStories(options: { limit?: number; sectionSlug?: 
 }
 
 export async function getStory(sectionSlug: string, slug: string, lang = "en") {
+  await connection();
   const db = getDb();
   const [story] = await db
     .select({
