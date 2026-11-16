@@ -93,7 +93,7 @@ Review states and transitions (Architecture §6) · review queue · editorial no
 
 | Done | In progress / next |
 |------|--------------------|
-| ✅ 16 Nov: review states and transitions (tested), review queue, editorial notes, scheduling (D-027), unpublish with reason, admin fast-track | Revision history · corrections · legal hold + pre-publish checklist · homepage board · breaking banner · media library · staff invites · author pages · tags · audit log viewer · 2FA |
+| ✅ 16 Nov: review states and transitions (tested), review queue, editorial notes, scheduling (D-027), unpublish with reason, admin fast-track, staff invites (D-028) | Revision history · corrections · legal hold + pre-publish checklist · homepage board · breaking banner · media library · author pages · tags · audit log viewer · 2FA |
 
 **Done when:** Writer submits → Editor requests changes → Writer resubmits → Editor approves and schedules → story auto-publishes → Editor places it as Lead → breaking banner shows and auto-expires. *(Verified 16 Nov in a browser test up to "story auto-publishes".)*
 

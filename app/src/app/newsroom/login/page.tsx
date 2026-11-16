@@ -26,7 +26,16 @@ async function LoginFootnote() {
 
 export const metadata: Metadata = { title: "Newsroom sign in" };
 
-export default function LoginPage() {
+async function WelcomeNotice({ searchParams }: { searchParams: PageProps<"/newsroom/login">["searchParams"] }) {
+  if ((await searchParams).welcome !== "1") return null;
+  return (
+    <p role="status" className="mb-5 rounded-md bg-mist px-3 py-2.5 text-sm font-semibold text-lake-ink">
+      Your password is set. Sign in with your email and new password.
+    </p>
+  );
+}
+
+export default function LoginPage({ searchParams }: PageProps<"/newsroom/login">) {
   return (
     <main className="flex min-h-dvh items-center justify-center bg-brand px-4 py-10">
       <div className="w-full max-w-sm rounded-xl bg-surface p-7 shadow-xl">
@@ -38,6 +47,9 @@ export default function LoginPage() {
             <p className="text-sm text-slate">Staff sign in</p>
           </div>
         </div>
+        <Suspense fallback={null}>
+          <WelcomeNotice searchParams={searchParams} />
+        </Suspense>
         <LoginForm />
         <Suspense
           fallback={

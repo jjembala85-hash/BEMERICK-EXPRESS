@@ -57,6 +57,11 @@ async function NewsroomShell({ children }: { children: React.ReactNode }) {
                 )}
               </Link>
             )}
+            {can(staff.role, "staff.manage") && (
+              <Link href="/newsroom/staff" className="rounded px-2.5 py-1.5 text-sm font-semibold hover:bg-white/10">
+                Staff
+              </Link>
+            )}
           </nav>
           <Link href="/" className="ml-auto hidden text-sm hover:underline sm:block">
             View site
