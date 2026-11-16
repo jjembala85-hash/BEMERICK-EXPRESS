@@ -7,6 +7,8 @@ import { getDb } from "@/db";
 import {
   article,
   articleAuthor,
+  articleCorrection,
+  articleRevision,
   articleTranslation,
   articleType,
   auditLog,
@@ -22,6 +24,7 @@ import { slugify } from "@/lib/slug";
 import {
   GOES_PUBLIC,
   NOTE_REQUIRED,
+  PUBLISH_CHECKLIST,
   canEditContent,
   canTake,
   isStatus,
@@ -211,9 +214,49 @@ export async function saveStory(_prev: StoryState, formData: FormData): Promise<
     if (!standfirst) return { error: "Add a standfirst (one-sentence summary) first." };
   }
 
+  // Pre-publish checklist: every item ticked before readers can see the story.
+  const goesPublic = Boolean(action && GOES_PUBLIC.has(action));
+  if (goesPublic && PUBLISH_CHECKLIST.some((c) => formData.get(`check_${c.key}`) !== "on")) {
+    return { error: "Tick every item on the pre-publish checklist first." };
+  }
+
   const articleId = existing?.id ?? crypto.randomUUID();
   const now = new Date();
   const wasPublished = Boolean(existing?.firstPublishedAt);
+
+  // Keep a copy of the words each time readers get a new version.
+  const revisionReason = goesPublic ? "publish" : !action && ctx.status === "published" ? "update" : null;
+  const revisionSource =
+    revisionReason &&
+    (content ??
+      (
+        await db
+          .select({
+            headline: articleTranslation.headline,
+            standfirst: articleTranslation.standfirst,
+            body: articleTranslation.body,
+            leadMediaId: article.leadMediaId,
+          })
+          .from(articleTranslation)
+          .innerJoin(article, eq(article.id, articleTranslation.articleId))
+          .where(and(eq(articleTranslation.articleId, articleId), eq(articleTranslation.lang, "en")))
+          .limit(1)
+      )[0]);
+  const revisionInsert = () =>
+    revisionReason && revisionSource
+      ? [
+          db.insert(articleRevision).values({
+            articleId,
+            lang: "en",
+            headline: revisionSource.headline,
+            standfirst: revisionSource.standfirst || null,
+            body: revisionSource.body as object,
+            leadMediaId: revisionSource.leadMediaId,
+            reason: revisionReason,
+            createdBy: staff.id,
+          }),
+        ]
+      : [];
 
   // The web address is fixed once a story is live or scheduled, so shared links never break.
   const slugLocked = wasPublished || ctx.status === "scheduled";
@@ -283,12 +326,13 @@ export async function saveStory(_prev: StoryState, formData: FormData): Promise<
         slug: slug!,
       }),
       ...(profile ? [db.insert(articleAuthor).values({ articleId, staffId: staff.id, position: 0 })] : []),
+      ...revisionInsert(),
       db.insert(auditLog).values({
         actorId: staff.id,
         action: action ? `article.create_and_${action}` : "article.create",
         entity: "article",
         entityId: articleId,
-        details: { headline: content.headline },
+        details: { headline: content.headline, ...(goesPublic ? { checklist: "all items confirmed" } : {}) },
       }),
     ]);
     redirect(`/newsroom/stories/${articleId}?saved=${action ?? "created"}`);
@@ -317,6 +361,7 @@ export async function saveStory(_prev: StoryState, formData: FormData): Promise<
             .where(and(eq(articleTranslation.articleId, articleId), eq(articleTranslation.lang, "en"))),
         ]
       : []),
+    ...revisionInsert(),
     ...(note && action
       ? [db.insert(editorialNote).values({ articleId, authorId: staff.id, kind: action, body: note })]
       : []),
@@ -332,6 +377,7 @@ export async function saveStory(_prev: StoryState, formData: FormData): Promise<
               ...(action ? { toStatus: nextStatus(action) } : {}),
               ...(scheduleAt ? { scheduledFor: scheduleAt.toISOString() } : {}),
               ...(note ? { note } : {}),
+              ...(goesPublic ? { checklist: "all items confirmed" } : {}),
             },
           }),
         ]
@@ -366,6 +412,104 @@ export async function addNote(prev: NoteState, formData: FormData): Promise<Note
   }
 
   await db.insert(editorialNote).values({ articleId, authorId: staff.id, kind: "note", body });
+  refresh();
+  return { ok: (prev.ok ?? 0) + 1 };
+}
+
+export type SafetyState = { error?: string; ok?: number };
+
+/**
+ * Legal hold: anyone working on a story can flag it for legal review; only an
+ * admin can clear it. While flagged, it cannot be published or scheduled.
+ */
+export async function setLegalHold(prev: SafetyState, formData: FormData): Promise<SafetyState> {
+  const staff = await requireStaff("article.create");
+  const articleId = String(formData.get("articleId") ?? "");
+  const on = formData.get("on") === "true";
+  const reason = String(formData.get("reason") ?? "").trim();
+  if (!UUID.test(articleId)) return { error: "This story no longer exists." };
+  if (reason.length > 2000) return { error: "The reason is too long (2,000 characters maximum)." };
+
+  const db = getDb();
+  const [story] = await db
+    .select({ createdBy: article.createdBy, legalHold: article.legalHold, status: article.status })
+    .from(article)
+    .where(eq(article.id, articleId))
+    .limit(1);
+  if (!story) return { error: "This story no longer exists." };
+  if (story.createdBy !== staff.id && !can(staff.role, "article.edit_any")) {
+    return { error: "You can only flag your own stories." };
+  }
+  if (!on && !can(staff.role, "legal.clear")) return { error: "Only an administrator can clear a legal hold." };
+  if (on && !reason) return { error: "Say briefly what needs legal review." };
+  if (story.legalHold === on) return { ok: (prev.ok ?? 0) + 1 };
+
+  await db.batch([
+    db.update(article).set({ legalHold: on }).where(eq(article.id, articleId)),
+    db.insert(editorialNote).values({
+      articleId,
+      authorId: staff.id,
+      kind: on ? "legal_hold" : "legal_clear",
+      body: reason || "Legal hold cleared.",
+    }),
+    db.insert(auditLog).values({
+      actorId: staff.id,
+      action: on ? "article.legal_hold" : "article.legal_clear",
+      entity: "article",
+      entityId: articleId,
+      details: { status: story.status, ...(reason ? { reason } : {}) },
+    }),
+  ]);
+  refresh();
+  return { ok: (prev.ok ?? 0) + 1 };
+}
+
+/** Adds a dated, public correction to a story that has been published. */
+export async function addCorrection(prev: SafetyState, formData: FormData): Promise<SafetyState> {
+  const staff = await requireStaff("corrections.manage");
+  const articleId = String(formData.get("articleId") ?? "");
+  const body = String(formData.get("body") ?? "").trim();
+  if (!UUID.test(articleId)) return { error: "This story no longer exists." };
+  if (body.length < 10) return { error: "Write the correction in full: what was wrong and what is right." };
+  if (body.length > 1000) return { error: "The correction is too long (1,000 characters maximum)." };
+
+  const db = getDb();
+  const [story] = await db
+    .select({
+      firstPublishedAt: article.firstPublishedAt,
+      leadMediaId: article.leadMediaId,
+      headline: articleTranslation.headline,
+      standfirst: articleTranslation.standfirst,
+      body: articleTranslation.body,
+    })
+    .from(article)
+    .innerJoin(articleTranslation, and(eq(articleTranslation.articleId, article.id), eq(articleTranslation.lang, "en")))
+    .where(eq(article.id, articleId))
+    .limit(1);
+  if (!story) return { error: "This story no longer exists." };
+  if (!story.firstPublishedAt) return { error: "Only stories that have been published can be corrected." };
+
+  await db.batch([
+    db.insert(articleCorrection).values({ articleId, body, createdBy: staff.id }),
+    db.update(article).set({ updatedPublicAt: new Date() }).where(eq(article.id, articleId)),
+    db.insert(articleRevision).values({
+      articleId,
+      lang: "en",
+      headline: story.headline,
+      standfirst: story.standfirst,
+      body: story.body as object,
+      leadMediaId: story.leadMediaId,
+      reason: "correction",
+      createdBy: staff.id,
+    }),
+    db.insert(auditLog).values({
+      actorId: staff.id,
+      action: "article.correction",
+      entity: "article",
+      entityId: articleId,
+      details: { correction: body },
+    }),
+  ]);
   refresh();
   return { ok: (prev.ok ?? 0) + 1 };
 }

@@ -9,6 +9,8 @@ const kindLabels: Record<string, string> = {
   request_changes: "Sent back",
   spike: "Spiked",
   unpublish: "Unpublished",
+  legal_hold: "Legal hold",
+  legal_clear: "Legal hold cleared",
   note: "Note",
 };
 
@@ -16,6 +18,8 @@ const kindTone: Record<string, string> = {
   request_changes: "border-crane-gold",
   spike: "border-ember",
   unpublish: "border-ember",
+  legal_hold: "border-ember",
+  legal_clear: "border-lake-ink",
 };
 
 /** Notes between writer and editor. Newsroom only; never shown to readers. */

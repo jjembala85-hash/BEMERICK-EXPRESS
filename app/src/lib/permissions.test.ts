@@ -16,6 +16,7 @@ const allPermissions: Permission[] = [
   "media.upload",
   "sections.manage",
   "corrections.manage",
+  "legal.clear",
   "staff.manage",
   "audit.view",
   "settings.manage",
@@ -40,7 +41,7 @@ test("editor runs the newsroom but cannot manage staff, settings or skip review"
   for (const p of ["article.publish", "article.unpublish", "article.edit_any", "homepage.manage", "audit.view"] as const) {
     assert.ok(can("editor", p), p);
   }
-  for (const p of ["staff.manage", "settings.manage", "article.fast_track"] as const) {
+  for (const p of ["staff.manage", "settings.manage", "article.fast_track", "legal.clear"] as const) {
     assert.equal(can("editor", p), false, p);
   }
 });

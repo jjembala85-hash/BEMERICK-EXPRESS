@@ -2,6 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  PUBLISH_CHECKLIST,
   availableActions,
   canEditContent,
   nextStatus,
@@ -96,4 +97,9 @@ test("schedule times are read as East Africa Time", () => {
   assert.equal(toEATInput(d!), "2026-11-17T08:00");
   assert.equal(parseEATDateTime("tomorrow"), null);
   assert.equal(parseEATDateTime("2026-13-40T99:00"), null);
+});
+
+test("pre-publish checklist has five distinct items", () => {
+  assert.equal(PUBLISH_CHECKLIST.length, 5);
+  assert.equal(new Set(PUBLISH_CHECKLIST.map((c) => c.key)).size, 5);
 });

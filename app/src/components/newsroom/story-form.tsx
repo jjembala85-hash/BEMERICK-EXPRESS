@@ -3,7 +3,9 @@
 import { useActionState, useState } from "react";
 import { saveStory, type StoryState } from "@/app/newsroom/(protected)/stories/actions";
 import {
+  GOES_PUBLIC,
   NOTE_REQUIRED,
+  PUBLISH_CHECKLIST,
   actionLabels,
   statusLabels,
   type Status,
@@ -25,6 +27,7 @@ export type StoryFormValues = {
   leadPhoto?: LeadPhotoValue | null;
   /** "Goes live 17 Nov 2026, 08:00 EAT" for scheduled stories. */
   scheduledLabel?: string;
+  legalHold?: boolean;
 };
 
 const inputClass =
@@ -88,12 +91,18 @@ export function StoryForm({
   const needsNote = actions.some((a) => NOTE_REQUIRED.has(a));
   const canSchedule = actions.includes("schedule");
   const otherActions = actions.filter((a) => a !== "schedule");
+  const needsChecklist = actions.some((a) => GOES_PUBLIC.has(a));
 
   return (
     <form action={action} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
       {values.id && <input type="hidden" name="id" value={values.id} />}
 
       <div className="space-y-5">
+        {values.legalHold && (
+          <p role="status" className="rounded-md border-l-4 border-ember bg-ember/10 px-4 py-3 text-sm font-semibold text-ember">
+            Legal review needed. This story cannot be published or scheduled until an administrator clears the hold.
+          </p>
+        )}
         {!editable && (
           <p className="rounded-md border border-mist bg-mist/60 px-4 py-3 text-sm text-ink">
             {values.status === "in_review"
@@ -188,6 +197,20 @@ export function StoryForm({
               </button>
             ))}
           </div>
+
+          {needsChecklist && (
+            <fieldset className="mt-4 border-t border-mist pt-4">
+              <legend className="text-sm font-semibold text-ink">Before publishing, confirm:</legend>
+              <div className="mt-2 space-y-2">
+                {PUBLISH_CHECKLIST.map((c) => (
+                  <label key={c.key} className="flex items-start gap-2 text-sm text-ink">
+                    <input type="checkbox" name={`check_${c.key}`} className="mt-0.5 size-4 shrink-0 accent-[var(--color-brand)]" />
+                    <span>{c.label}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          )}
 
           {canSchedule && (
             <div className="mt-4 border-t border-mist pt-4">

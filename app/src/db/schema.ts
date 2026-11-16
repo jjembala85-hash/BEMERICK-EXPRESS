@@ -206,6 +206,46 @@ export const editorialNote = pgTable(
   (t) => [index("editorial_note_article_idx").on(t.articleId, t.createdAt)],
 );
 
+/**
+ * A copy of the story's words each time readers could see a new version
+ * (publish, edit while live, correction): proof of what was said and when.
+ */
+export const articleRevision = pgTable(
+  "article_revision",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    articleId: uuid("article_id")
+      .notNull()
+      .references(() => article.id, { onDelete: "cascade" }),
+    lang: text("lang").notNull().default("en"),
+    headline: text("headline").notNull(),
+    standfirst: text("standfirst"),
+    body: jsonb("body").notNull(),
+    leadMediaId: uuid("lead_media_id"),
+    reason: text("reason").notNull(), // publish | update | correction
+    createdBy: text("created_by").references(() => user.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("article_revision_article_idx").on(t.articleId, t.createdAt)],
+);
+
+/** Public, dated corrections shown under the story and on /corrections. */
+export const articleCorrection = pgTable(
+  "article_correction",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    articleId: uuid("article_id")
+      .notNull()
+      .references(() => article.id, { onDelete: "cascade" }),
+    body: text("body").notNull(),
+    createdBy: text("created_by")
+      .notNull()
+      .references(() => user.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("article_correction_created_idx").on(t.createdAt)],
+);
+
 /** Append-only security trail. */
 export const auditLog = pgTable(
   "audit_log",

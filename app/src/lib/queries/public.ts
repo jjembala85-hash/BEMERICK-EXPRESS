@@ -1,9 +1,17 @@
 // The ONLY place public pages read stories from. Every query goes through
 // isPublic(), so drafts and unpublished stories can never leak to readers.
-import { and, desc, eq, inArray, lte } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, lte } from "drizzle-orm";
 import { connection } from "next/server";
 import { getDb } from "@/db";
-import { article, articleAuthor, articleTranslation, media, section, staffProfile } from "@/db/schema";
+import {
+  article,
+  articleAuthor,
+  articleCorrection,
+  articleTranslation,
+  media,
+  section,
+  staffProfile,
+} from "@/db/schema";
 import { toPhoto } from "@/lib/media";
 
 // "Now" must be read on a real visit, not while Next.js prerenders or prefetches,
@@ -97,5 +105,32 @@ export async function getStory(sectionSlug: string, slug: string, lang = "en") {
     .where(eq(articleAuthor.articleId, story.id))
     .orderBy(articleAuthor.position);
 
-  return { ...story, photo: toPhoto(story.photo), authors };
+  const corrections = await db
+    .select({ id: articleCorrection.id, body: articleCorrection.body, createdAt: articleCorrection.createdAt })
+    .from(articleCorrection)
+    .where(eq(articleCorrection.articleId, story.id))
+    .orderBy(asc(articleCorrection.createdAt));
+
+  return { ...story, photo: toPhoto(story.photo), authors, corrections };
+}
+
+/** Latest corrections on stories readers can see, for the public Corrections page. */
+export async function getRecentCorrections(limit = 50, lang = "en") {
+  await connection();
+  return getDb()
+    .select({
+      id: articleCorrection.id,
+      body: articleCorrection.body,
+      createdAt: articleCorrection.createdAt,
+      headline: articleTranslation.headline,
+      slug: articleTranslation.slug,
+      sectionSlug: section.slug,
+    })
+    .from(articleCorrection)
+    .innerJoin(article, eq(article.id, articleCorrection.articleId))
+    .innerJoin(articleTranslation, eq(articleTranslation.articleId, article.id))
+    .innerJoin(section, eq(section.id, article.primarySectionId))
+    .where(and(eq(articleTranslation.lang, lang), isPublic()))
+    .orderBy(desc(articleCorrection.createdAt))
+    .limit(limit);
 }

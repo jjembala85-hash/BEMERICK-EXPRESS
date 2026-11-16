@@ -77,14 +77,14 @@ gantt
 | # | Task | Status |
 |---|------|--------|
 | 2.1 | Global layout: header, swipe strip, footer, dark mode | ✅ 15 Nov (collapsible sidebar, D-023) |
-| 2.2 | Basic story editor (headline, standfirst, Tiptap body, section, lead photo upload to R2) | 🟦 Text editing done 15 Nov; lead photo upload built 16 Nov (D-026), storage connected and tested; first real photo upload in the editor still to confirm |
+| 2.2 | Basic story editor (headline, standfirst, Tiptap body, section, lead photo upload to R2) | ✅ 16 Nov (lead photo upload, D-026; confirmed by the owner on a real story) |
 | 2.3 | Publish / unpublish (admin) | ✅ 15 Nov |
 | 2.4 | Article page (byline, times, photo + credit, body, related) | ✅ 16 Nov (photo + caption + credit, also on homepage, section lists and link previews; "More from <section>" related stories) |
 | 2.5 | Homepage (latest-based) + section pages | ✅ 15 Nov |
 | 2.6 | Caching + on-publish revalidation | ⬜ Pages read the database on every visit for now; needs the R2 cache |
 | 2.7 | Favicon, manifest, page titles `Headline · BEMERICK EXPRESS` | ✅ 16 Nov (web app manifest, home-screen and Apple icons) |
 
-### 🏁 Milestone 1 · First story live
+### 🏁 Milestone 1 · First story live: ✅ reached 16 Nov 2026
 Admin signs in → writes a story with a photo → publishes → it appears on the homepage, its section page and its own URL → a signed-out visitor reads it on a phone → drafts are not reachable by URL.
 
 ## Phase 3 · Editorial workflow & curation (weeks 6–7)
@@ -93,7 +93,7 @@ Review states and transitions (Architecture §6) · review queue · editorial no
 
 | Done | In progress / next |
 |------|--------------------|
-| ✅ 16 Nov: review states and transitions (tested), review queue, editorial notes, scheduling (D-027), unpublish with reason, admin fast-track, staff invites (D-028) | Revision history · corrections · legal hold + pre-publish checklist · homepage board · breaking banner · media library · author pages · tags · audit log viewer · 2FA |
+| ✅ 16 Nov: review states and transitions (tested), review queue, editorial notes, scheduling (D-027), unpublish with reason, admin fast-track, staff invites (D-028), revision history, corrections (public `/corrections` page), legal hold, pre-publish checklist | Homepage board · breaking banner · media library · author pages · tags · audit log viewer · 2FA |
 
 **Done when:** Writer submits → Editor requests changes → Writer resubmits → Editor approves and schedules → story auto-publishes → Editor places it as Lead → breaking banner shows and auto-expires. *(Verified 16 Nov in a browser test up to "story auto-publishes".)*
 

@@ -15,6 +15,13 @@
       "when": 1794830709432,
       "tag": "0001_editorial_note",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794835689755,
+      "tag": "0002_revisions_corrections",
+      "breakpoints": true
     }
   ]
 }

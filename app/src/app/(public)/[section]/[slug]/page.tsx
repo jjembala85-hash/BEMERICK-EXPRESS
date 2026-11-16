@@ -87,6 +87,16 @@ async function Story({ params }: { params: Props["params"] }) {
         <RichText doc={story.body} />
       </div>
 
+      {story.corrections.length > 0 && (
+        <aside aria-label="Corrections" className="mt-8 space-y-3">
+          {story.corrections.map((c) => (
+            <p key={c.id} className="border-l-4 border-crane-gold bg-surface px-4 py-3 text-[0.95rem] leading-relaxed text-ink">
+              <span className="font-semibold">Correction, {formatEAT(c.createdAt)}:</span> {c.body}
+            </p>
+          ))}
+        </aside>
+      )}
+
       <ShareLinks path={path} text={shareText} />
 
       <Suspense fallback={null}>

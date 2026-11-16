@@ -37,6 +37,18 @@ export type StoryContext = {
 /** Actions that need a written note (the reason is stored and shown to the writer). */
 export const NOTE_REQUIRED: ReadonlySet<WorkflowAction> = new Set(["request_changes", "spike", "unpublish"]);
 
+/**
+ * Pre-publish checklist (Blueprint section 11). Every item must be ticked before a
+ * story is published or scheduled; the ticks are kept in the audit log.
+ */
+export const PUBLISH_CHECKLIST = [
+  { key: "sources", label: "Facts and sources verified" },
+  { key: "reply", label: "Anyone accused was given a chance to respond" },
+  { key: "photos", label: "We have the right to use every photo" },
+  { key: "minors", label: "No child or victim of a sexual offence can be identified" },
+  { key: "court", label: "Court-reporting restrictions checked" },
+] as const;
+
 /** Actions that put a story in front of readers, now or later. */
 export const GOES_PUBLIC: ReadonlySet<WorkflowAction> = new Set(["publish", "approve_publish", "schedule"]);
 

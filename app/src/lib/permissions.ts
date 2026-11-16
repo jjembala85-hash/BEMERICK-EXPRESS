@@ -14,6 +14,7 @@ export type Permission =
   | "media.upload"
   | "sections.manage"
   | "corrections.manage"
+  | "legal.clear"
   | "staff.manage"
   | "audit.view"
   | "settings.manage";
@@ -32,7 +33,7 @@ const editorPermissions: Permission[] = [
 ];
 
 const rolePermissions: Record<Role, readonly Permission[]> = {
-  admin: [...editorPermissions, "article.fast_track", "staff.manage", "settings.manage"],
+  admin: [...editorPermissions, "article.fast_track", "legal.clear", "staff.manage", "settings.manage"],
   editor: editorPermissions,
   writer: ["article.create", "media.upload"],
 };
