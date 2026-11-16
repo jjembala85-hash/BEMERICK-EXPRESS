@@ -77,9 +77,9 @@ gantt
 | # | Task | Status |
 |---|------|--------|
 | 2.1 | Global layout: header, swipe strip, footer, dark mode | ✅ 15 Nov (collapsible sidebar, D-023) |
-| 2.2 | Basic story editor (headline, standfirst, Tiptap body, section, lead photo upload to R2) | 🟦 Text editing done 15 Nov; lead photo upload to R2 still to build |
+| 2.2 | Basic story editor (headline, standfirst, Tiptap body, section, lead photo upload to R2) | 🟦 Text editing done 15 Nov; lead photo upload built 16 Nov (D-026), storage connected and tested; first real photo upload in the editor still to confirm |
 | 2.3 | Publish / unpublish (admin) | ✅ 15 Nov |
-| 2.4 | Article page (byline, times, photo + credit, body, related) | 🟦 Byline, times, body, share links done; photo + credit and related stories still to build |
+| 2.4 | Article page (byline, times, photo + credit, body, related) | 🟦 Byline, times, body, share links done; photo + caption + credit built 16 Nov (also on homepage, section lists and link previews); related stories still to build |
 | 2.5 | Homepage (latest-based) + section pages | ✅ 15 Nov |
 | 2.6 | Caching + on-publish revalidation | ⬜ Pages read the database on every visit for now; needs the R2 cache |
 | 2.7 | Favicon, manifest, page titles `Headline · BEMERICK EXPRESS` | 🟦 Tab icon and titles done; web app manifest still to add |

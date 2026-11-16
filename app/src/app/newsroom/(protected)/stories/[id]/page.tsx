@@ -3,9 +3,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { and, eq } from "drizzle-orm";
 import { getDb } from "@/db";
-import { article, articleTranslation, section } from "@/db/schema";
+import { article, articleTranslation, media, section } from "@/db/schema";
 import { requireStaff } from "@/lib/session";
 import { can } from "@/lib/permissions";
+import { isStorageReady, mediaUrl } from "@/lib/media";
 import { StoryForm } from "@/components/newsroom/story-form";
 
 export const metadata: Metadata = { title: "Edit story" };
@@ -40,15 +41,31 @@ export default async function EditStoryPage({
       slug: articleTranslation.slug,
       body: articleTranslation.body,
       sectionSlug: section.slug,
+      photo: {
+        id: media.id,
+        r2Key: media.r2Key,
+        variants: media.variants,
+        altText: media.altText,
+        credit: media.credit,
+        caption: media.caption,
+      },
     })
     .from(article)
     .innerJoin(articleTranslation, and(eq(articleTranslation.articleId, article.id), eq(articleTranslation.lang, "en")))
     .innerJoin(section, eq(section.id, article.primarySectionId))
+    .leftJoin(media, eq(media.id, article.leadMediaId))
     .where(eq(article.id, id))
     .limit(1);
 
   if (!story) notFound();
   if (story.createdBy !== staff.id && !can(staff.role, "article.edit_any")) notFound();
+
+  // The smallest stored size is enough for the editor preview.
+  const smallestKey = story.photo
+    ? (Object.entries((story.photo.variants ?? {}) as Record<string, string>).sort(
+        (a, b) => Number(a[0]) - Number(b[0]),
+      )[0]?.[1] ?? story.photo.r2Key)
+    : null;
 
   const sections = await db
     .select({ id: section.id, name: section.name })
@@ -79,10 +96,21 @@ export default async function EditStoryPage({
           slug: story.slug,
           body: story.body,
           slugLocked: Boolean(story.firstPublishedAt),
+          leadPhoto:
+            story.photo && smallestKey
+              ? {
+                  id: story.photo.id,
+                  previewUrl: mediaUrl(smallestKey),
+                  altText: story.photo.altText,
+                  credit: story.photo.credit,
+                  caption: story.photo.caption,
+                }
+              : null,
         }}
         sections={sections}
         canPublish={can(staff.role, "article.publish")}
         canUnpublish={can(staff.role, "article.unpublish")}
+        storageReady={isStorageReady()}
         flash={typeof saved === "string" ? flashMessages[saved] : undefined}
       />
     </>

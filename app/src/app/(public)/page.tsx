@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { getLatestStories } from "@/lib/queries/public";
 import { Kicker, StoryList } from "@/components/story-list";
 import { formatEAT } from "@/lib/dates";
+import { PhotoFrame } from "@/components/photo";
 
 // Interim homepage: newest story leads, the rest follow. The editor-curated
 // Lead and Top Stories board replaces this in Phase 3.
@@ -29,6 +30,14 @@ async function Latest() {
       <article className="border-b-2 border-crane-gold pb-8">
         <Kicker section={lead.sectionName} type={lead.type} />
         <Link href={`/${lead.sectionSlug}/${lead.slug}`} className="group mt-2 block">
+          {lead.photo && (
+            <PhotoFrame
+              photo={lead.photo}
+              sizes="(min-width: 56rem) 54rem, 100vw"
+              priority
+              className="mb-4 rounded-md"
+            />
+          )}
           <h1 className="font-serif text-3xl font-bold leading-tight text-ink group-hover:underline sm:text-5xl">
             {lead.headline}
           </h1>

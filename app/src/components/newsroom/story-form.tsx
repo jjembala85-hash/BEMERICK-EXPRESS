@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { saveStory, type StoryState } from "@/app/newsroom/(protected)/stories/actions";
 import { RichTextEditor } from "./rich-text-editor";
+import { LeadPhoto, type LeadPhotoValue } from "./lead-photo";
 
 export type StoryFormValues = {
   id?: string;
@@ -14,6 +15,7 @@ export type StoryFormValues = {
   slug: string;
   body: unknown;
   slugLocked: boolean;
+  leadPhoto?: LeadPhotoValue | null;
 };
 
 const inputClass =
@@ -32,12 +34,14 @@ export function StoryForm({
   sections,
   canPublish,
   canUnpublish,
+  storageReady,
   flash,
 }: {
   values: StoryFormValues;
   sections: { id: string; name: string }[];
   canPublish: boolean;
   canUnpublish: boolean;
+  storageReady: boolean;
   flash?: string;
 }) {
   const [state, action, pending] = useActionState<StoryState, FormData>(saveStory, {});
@@ -132,6 +136,8 @@ export function StoryForm({
             )}
           </div>
         </div>
+
+        <LeadPhoto initial={values.leadPhoto} storageReady={storageReady} />
 
         <div className="space-y-4 rounded-lg border border-mist bg-surface p-4">
           <div>

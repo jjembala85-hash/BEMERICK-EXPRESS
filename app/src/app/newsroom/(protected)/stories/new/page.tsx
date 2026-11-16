@@ -5,6 +5,7 @@ import { getDb } from "@/db";
 import { section } from "@/db/schema";
 import { requireStaff } from "@/lib/session";
 import { can } from "@/lib/permissions";
+import { isStorageReady } from "@/lib/media";
 import { StoryForm } from "@/components/newsroom/story-form";
 
 export const metadata: Metadata = { title: "New story" };
@@ -26,6 +27,7 @@ export default async function NewStoryPage() {
         sections={sections}
         canPublish={can(staff.role, "article.publish")}
         canUnpublish={false}
+        storageReady={isStorageReady()}
       />
     </>
   );

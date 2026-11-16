@@ -6,6 +6,7 @@ import { getStory } from "@/lib/queries/public";
 import { Kicker } from "@/components/story-list";
 import { RichText } from "@/lib/rich-text";
 import { formatEAT } from "@/lib/dates";
+import { PhotoFrame } from "@/components/photo";
 
 type Props = PageProps<"/[section]/[slug]">;
 
@@ -22,7 +23,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description: story.standfirst ?? undefined,
       publishedTime: story.firstPublishedAt?.toISOString(),
       modifiedTime: story.updatedPublicAt?.toISOString(),
+      images: story.photo
+        ? [{ url: story.photo.src, width: story.photo.width ?? undefined, height: story.photo.height ?? undefined, alt: story.photo.alt }]
+        : undefined,
     },
+    twitter: { card: story.photo ? "summary_large_image" : "summary" },
   };
 }
 
@@ -67,6 +72,16 @@ async function Story({ params }: { params: Props["params"] }) {
         {story.firstPublishedAt && <p>{formatEAT(story.firstPublishedAt)}</p>}
         {story.updatedPublicAt && <p>Updated {formatEAT(story.updatedPublicAt)}</p>}
       </div>
+
+      {story.photo && (
+        <figure className="mt-6">
+          <PhotoFrame photo={story.photo} sizes="(min-width: 44rem) 42rem, 100vw" priority className="rounded-md" />
+          <figcaption className="mt-2 text-sm leading-snug text-slate">
+            {story.photo.caption && <span className="text-ink">{story.photo.caption} </span>}
+            <span>Photo: {story.photo.credit}</span>
+          </figcaption>
+        </figure>
+      )}
 
       <div className="mt-7 font-serif text-[1.15rem] leading-[1.7] text-ink sm:text-xl sm:leading-[1.7]">
         <RichText doc={story.body} />

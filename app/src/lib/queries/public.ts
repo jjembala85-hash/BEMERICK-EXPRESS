@@ -2,7 +2,8 @@
 // isPublic(), so drafts and unpublished stories can never leak to readers.
 import { and, desc, eq, lte } from "drizzle-orm";
 import { getDb } from "@/db";
-import { article, articleAuthor, articleTranslation, section, staffProfile } from "@/db/schema";
+import { article, articleAuthor, articleTranslation, media, section, staffProfile } from "@/db/schema";
+import { toPhoto } from "@/lib/media";
 
 const isPublic = () =>
   and(eq(article.status, "published"), lte(article.publishedAt, new Date()));
@@ -17,17 +18,27 @@ const cardFields = {
   slug: articleTranslation.slug,
   sectionSlug: section.slug,
   sectionName: section.name,
+  photo: {
+    r2Key: media.r2Key,
+    variants: media.variants,
+    width: media.width,
+    height: media.height,
+    altText: media.altText,
+    credit: media.credit,
+    caption: media.caption,
+  },
 };
 
 export type StoryCard = Awaited<ReturnType<typeof getLatestStories>>[number];
 
 export async function getLatestStories(options: { limit?: number; sectionSlug?: string; lang?: string } = {}) {
   const { limit = 20, sectionSlug, lang = "en" } = options;
-  return getDb()
+  const rows = await getDb()
     .select(cardFields)
     .from(article)
     .innerJoin(articleTranslation, eq(articleTranslation.articleId, article.id))
     .innerJoin(section, eq(section.id, article.primarySectionId))
+    .leftJoin(media, eq(media.id, article.leadMediaId))
     .where(
       and(
         eq(articleTranslation.lang, lang),
@@ -37,6 +48,7 @@ export async function getLatestStories(options: { limit?: number; sectionSlug?: 
     )
     .orderBy(desc(article.publishedAt))
     .limit(limit);
+  return rows.map((row) => ({ ...row, photo: toPhoto(row.photo) }));
 }
 
 export async function getStory(sectionSlug: string, slug: string, lang = "en") {
@@ -53,6 +65,7 @@ export async function getStory(sectionSlug: string, slug: string, lang = "en") {
     .from(article)
     .innerJoin(articleTranslation, eq(articleTranslation.articleId, article.id))
     .innerJoin(section, eq(section.id, article.primarySectionId))
+    .leftJoin(media, eq(media.id, article.leadMediaId))
     .where(
       and(
         eq(articleTranslation.slug, slug),
@@ -71,5 +84,5 @@ export async function getStory(sectionSlug: string, slug: string, lang = "en") {
     .where(eq(articleAuthor.articleId, story.id))
     .orderBy(articleAuthor.position);
 
-  return { ...story, authors };
+  return { ...story, photo: toPhoto(story.photo), authors };
 }

@@ -9,6 +9,7 @@ import {
   articleTranslation,
   articleType,
   auditLog,
+  media,
   section,
   staffProfile,
 } from "@/db/schema";
@@ -20,6 +21,8 @@ import { slugify } from "@/lib/slug";
 export type StoryState = { error?: string; message?: string };
 
 type ArticleType = (typeof articleType.enumValues)[number];
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 async function uniqueSlug(base: string, articleId: string) {
   const db = getDb();
@@ -53,6 +56,7 @@ export async function saveStory(_prev: StoryState, formData: FormData): Promise<
   const typeInput = String(formData.get("type") ?? "news");
   const slugInput = String(formData.get("slug") ?? "").trim();
   const body = parseBody(String(formData.get("body") ?? ""));
+  const leadMediaInput = String(formData.get("leadMediaId") ?? "");
 
   if (!headline) return { error: "Add a headline." };
   if (headline.length > 160) return { error: "The headline is too long (160 characters maximum)." };
@@ -63,6 +67,15 @@ export async function saveStory(_prev: StoryState, formData: FormData): Promise<
 
   const [sectionRow] = await db.select({ id: section.id }).from(section).where(eq(section.id, sectionId)).limit(1);
   if (!sectionRow) return { error: "Choose a section." };
+
+  let leadMediaId: string | null = null;
+  if (leadMediaInput) {
+    const [photo] = UUID.test(leadMediaInput)
+      ? await db.select({ id: media.id }).from(media).where(eq(media.id, leadMediaInput)).limit(1)
+      : [];
+    if (!photo) return { error: "The lead photo could not be found. Remove it and upload it again." };
+    leadMediaId = photo.id;
+  }
 
   // Existing story: check the editor is allowed to touch it.
   let existing: { id: string; status: string; createdBy: string; legalHold: boolean; firstPublishedAt: Date | null } | undefined;
@@ -128,6 +141,7 @@ export async function saveStory(_prev: StoryState, formData: FormData): Promise<
         id: articleId,
         type,
         primarySectionId: sectionRow.id,
+        leadMediaId,
         createdBy: staff.id,
         ...statusChange,
       }),
@@ -154,7 +168,7 @@ export async function saveStory(_prev: StoryState, formData: FormData): Promise<
   await db.batch([
     db
       .update(article)
-      .set({ type, primarySectionId: sectionRow.id, ...statusChange })
+      .set({ type, primarySectionId: sectionRow.id, leadMediaId, ...statusChange })
       .where(eq(article.id, articleId)),
     db
       .update(articleTranslation)
