@@ -101,7 +101,7 @@ Review states and transitions (Architecture §6) · review queue · editorial no
 
 | Area | Tasks |
 |------|-------|
-| Content | 30+ stories published before announcement; About, Team, Contact, Tip, Advertise pages |
+| Content | 30+ stories published before announcement; About, Team, Contact, Tip, Advertise pages (Team page live 16 Nov with the technology team; journalists to add) |
 | Policies | Editorial, Corrections, Privacy, Terms, Cookies, reviewed by a media lawyer if possible |
 | SEO | Sitemaps, Google News sitemap, RSS, structured data, Search Console, Bing, Google News Publisher Center |
 | Performance | Meet budgets (Architecture §4) on a real mid-range Android over 4G |
