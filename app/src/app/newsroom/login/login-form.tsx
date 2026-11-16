@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { signIn, type SignInState } from "../actions";
+import { submitWithoutReset } from "@/lib/forms";
 
 const initial: SignInState = {};
 
@@ -9,7 +10,7 @@ export function LoginForm() {
   const [state, action, pending] = useActionState(signIn, initial);
 
   return (
-    <form action={action} className="space-y-4">
+    <form onSubmit={submitWithoutReset(action)} className="space-y-4">
       <div>
         <label htmlFor="email" className="mb-1 block text-sm font-semibold text-ink">
           Email

@@ -93,9 +93,9 @@ Review states and transitions (Architecture §6) · review queue · editorial no
 
 | Done | In progress / next |
 |------|--------------------|
-| ✅ 16 Nov: review states and transitions (tested), review queue, editorial notes, scheduling (D-027), unpublish with reason, admin fast-track, staff invites (D-028), revision history, corrections (public `/corrections` page), legal hold, pre-publish checklist | Homepage board · breaking banner · media library · author pages · tags · audit log viewer · 2FA |
+| ✅ 16 Nov: review states and transitions (tested), review queue, editorial notes, scheduling (D-027), unpublish with reason, admin fast-track, staff invites (D-028), revision history, corrections (public `/corrections` page), legal hold, pre-publish checklist, homepage board (Lead + Top Stories, pin-until, homepage-only headlines), breaking banner (one at a time, auto-expiry) | Media library · author pages · tags · audit log viewer · 2FA |
 
-**Done when:** Writer submits → Editor requests changes → Writer resubmits → Editor approves and schedules → story auto-publishes → Editor places it as Lead → breaking banner shows and auto-expires. *(Verified 16 Nov in a browser test up to "story auto-publishes".)*
+**Done when:** Writer submits → Editor requests changes → Writer resubmits → Editor approves and schedules → story auto-publishes → Editor places it as Lead → breaking banner shows and auto-expires. *(Verified 16 Nov in browser tests: every step through "breaking banner shows". Expiry is checked by the banner query and unit-tested board rules.)*
 
 ## Phase 4 · Live, bulletins, share kit (week 8)
 

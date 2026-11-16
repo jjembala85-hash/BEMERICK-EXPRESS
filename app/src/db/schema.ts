@@ -246,6 +246,45 @@ export const articleCorrection = pgTable(
   (t) => [index("article_correction_created_idx").on(t.createdAt)],
 );
 
+/**
+ * Editor-chosen homepage places (Blueprint 8.1): zone "lead" (position 0) and
+ * "top" (positions 1-4). Empty or expired places fall back automatically.
+ */
+export const homepageSlot = pgTable(
+  "homepage_slot",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    zone: text("zone").notNull(), // lead | top
+    position: integer("position").notNull(),
+    articleId: uuid("article_id")
+      .notNull()
+      .references(() => article.id, { onDelete: "cascade" }),
+    overrideHeadline: text("override_headline"),
+    pinnedUntil: timestamp("pinned_until", { withTimezone: true }),
+    updatedBy: text("updated_by").references(() => user.id),
+    ...timestamps,
+  },
+  (t) => [uniqueIndex("homepage_slot_zone_position_idx").on(t.zone, t.position)],
+);
+
+/** Site-wide breaking banner. One at a time; it ends at expires_at or when cleared. */
+export const breakingAlert = pgTable(
+  "breaking_alert",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    text: text("text").notNull(),
+    articleId: uuid("article_id").references(() => article.id, { onDelete: "set null" }),
+    startsAt: timestamp("starts_at", { withTimezone: true }).notNull().defaultNow(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    clearedAt: timestamp("cleared_at", { withTimezone: true }),
+    createdBy: text("created_by")
+      .notNull()
+      .references(() => user.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("breaking_alert_expires_idx").on(t.expiresAt)],
+);
+
 /** Append-only security trail. */
 export const auditLog = pgTable(
   "audit_log",

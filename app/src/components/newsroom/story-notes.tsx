@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useRef } from "react";
 import { addNote, type NoteState } from "@/app/newsroom/(protected)/stories/actions";
+import { submitWithoutReset } from "@/lib/forms";
 
 export type NoteItem = { id: string; kind: string; body: string; author: string; when: string };
 
@@ -54,7 +55,7 @@ export function StoryNotes({ articleId, notes }: { articleId: string; notes: Not
         </ol>
       )}
 
-      <form action={action} className="mt-4">
+      <form onSubmit={submitWithoutReset(action)} className="mt-4">
         <input type="hidden" name="articleId" value={articleId} />
         <label htmlFor="new-note" className="sr-only">Add a note</label>
         <textarea

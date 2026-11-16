@@ -7,6 +7,7 @@ import {
   setLegalHold,
   type SafetyState,
 } from "@/app/newsroom/(protected)/stories/actions";
+import { submitWithoutReset } from "@/lib/forms";
 
 export type CorrectionItem = { id: string; body: string; when: string; author: string };
 export type RevisionItem = { id: string; reason: string; when: string; author: string | null; headline: string };
@@ -43,6 +44,10 @@ export function StorySafety({
   const [holdState, holdAction, holdPending] = useActionState<SafetyState, FormData>(setLegalHold, {});
   const [fixState, fixAction, fixPending] = useActionState<SafetyState, FormData>(addCorrection, {});
   const fixBox = useRef<HTMLTextAreaElement>(null);
+  const holdBox = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    if (holdState.ok && holdBox.current) holdBox.current.value = "";
+  }, [holdState.ok]);
   useEffect(() => {
     if (fixState.ok && fixBox.current) fixBox.current.value = "";
   }, [fixState.ok]);
@@ -63,11 +68,12 @@ export function StorySafety({
             : "Flag the story if anything in it may need a lawyer's check (for example a serious allegation)."}
         </p>
         {(!legalHold || canClearHold) && (
-          <form action={holdAction} className="mt-3 space-y-2">
+          <form onSubmit={submitWithoutReset(holdAction)} className="mt-3 space-y-2">
             <input type="hidden" name="articleId" value={articleId} />
             <input type="hidden" name="on" value={legalHold ? "false" : "true"} />
             <label htmlFor="hold-reason" className="sr-only">Reason</label>
             <textarea
+              ref={holdBox}
               id="hold-reason"
               name="reason"
               rows={2}
@@ -105,10 +111,13 @@ export function StorySafety({
         )}
         {canCorrect && published ? (
           <form
-            action={fixAction}
             className="mt-3 space-y-2"
             onSubmit={(e) => {
-              if (!window.confirm("Publish this correction? Readers will see it under the story.")) e.preventDefault();
+              if (!window.confirm("Publish this correction? Readers will see it under the story.")) {
+                e.preventDefault();
+                return;
+              }
+              submitWithoutReset(fixAction)(e);
             }}
           >
             <input type="hidden" name="articleId" value={articleId} />

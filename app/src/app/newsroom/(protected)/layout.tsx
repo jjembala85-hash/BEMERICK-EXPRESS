@@ -31,53 +31,63 @@ async function NewsroomShell({ children }: { children: React.ReactNode }) {
     ? ((await getDb().select({ n: count() }).from(article).where(eq(article.status, "in_review")))[0]?.n ?? 0)
     : 0;
 
+  const links = [
+    { href: "/newsroom", label: "Dashboard", show: true },
+    { href: "/newsroom/stories", label: "Stories", show: true },
+    { href: "/newsroom/review", label: "Review", show: reviewer, badge: waiting },
+    { href: "/newsroom/homepage", label: "Homepage", show: can(staff.role, "homepage.manage") },
+    { href: "/newsroom/staff", label: "Staff", show: can(staff.role, "staff.manage") },
+  ].filter((l) => l.show);
+  const navLinks = links.map((l) => (
+    <Link
+      key={l.href}
+      href={l.href}
+      className="flex shrink-0 items-center gap-1.5 rounded px-2.5 py-1.5 text-sm font-semibold hover:bg-white/10"
+    >
+      {l.label}
+      {l.badge ? (
+        <span className="rounded-full bg-accent px-1.5 text-xs font-bold text-brand-deep" aria-label={`${l.badge} waiting`}>
+          {l.badge}
+        </span>
+      ) : null}
+    </Link>
+  ));
+
   return (
     <div className="flex min-h-dvh flex-col">
       <header className="sticky top-0 z-40 bg-brand text-white">
-        <div className="flex h-14 items-center gap-4 px-4">
-          <Link href="/newsroom" className="flex items-center gap-2.5">
+        <div className="flex h-14 items-center gap-3 px-4">
+          <Link href="/newsroom" className="flex shrink-0 items-center gap-2.5">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/bx-mark-reverse.svg" alt="" width={30} height={30} />
-            <span className="font-serif text-lg font-bold tracking-wide">BX Newsroom</span>
+            <span className="whitespace-nowrap font-serif text-lg font-bold tracking-wide">BX Newsroom</span>
           </Link>
-          <nav aria-label="Newsroom" className="flex items-center gap-1">
-            <Link href="/newsroom" className="rounded px-2.5 py-1.5 text-sm font-semibold hover:bg-white/10">
-              Dashboard
-            </Link>
-            <Link href="/newsroom/stories" className="rounded px-2.5 py-1.5 text-sm font-semibold hover:bg-white/10">
-              Stories
-            </Link>
-            {reviewer && (
-              <Link href="/newsroom/review" className="flex items-center gap-1.5 rounded px-2.5 py-1.5 text-sm font-semibold hover:bg-white/10">
-                Review
-                {waiting > 0 && (
-                  <span className="rounded-full bg-accent px-1.5 text-xs font-bold text-brand-deep" aria-label={`${waiting} waiting`}>
-                    {waiting}
-                  </span>
-                )}
-              </Link>
-            )}
-            {can(staff.role, "staff.manage") && (
-              <Link href="/newsroom/staff" className="rounded px-2.5 py-1.5 text-sm font-semibold hover:bg-white/10">
-                Staff
-              </Link>
-            )}
+          {/* Wide screens: links in the bar. */}
+          <nav aria-label="Newsroom" className="hidden items-center gap-1 lg:flex">
+            {navLinks}
           </nav>
-          <Link href="/" className="ml-auto hidden text-sm hover:underline sm:block">
+          <Link href="/" className="ml-auto hidden whitespace-nowrap text-sm hover:underline sm:block">
             View site
           </Link>
-          <span className="text-sm">
-            {staff.name}
-            <span className="ml-2 rounded bg-accent px-1.5 py-0.5 text-xs font-semibold text-brand-deep">
+          <span className="ml-auto flex items-center gap-2 text-sm sm:ml-0">
+            <span className="hidden whitespace-nowrap md:inline">{staff.name}</span>
+            <span className="rounded bg-accent px-1.5 py-0.5 text-xs font-semibold text-brand-deep">
               {roleLabels[staff.role]}
             </span>
           </span>
           <form action={signOut}>
-            <button type="submit" className="rounded px-2.5 py-1.5 text-sm font-semibold hover:bg-white/10">
+            <button type="submit" className="whitespace-nowrap rounded px-2.5 py-1.5 text-sm font-semibold hover:bg-white/10">
               Sign out
             </button>
           </form>
         </div>
+        {/* Phones and tablets: a swipeable row of links under the bar. */}
+        <nav
+          aria-label="Newsroom"
+          className="flex gap-1 overflow-x-auto border-t border-white/10 px-2 py-1.5 [scrollbar-width:none] lg:hidden"
+        >
+          {navLinks}
+        </nav>
       </header>
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">{children}</main>
     </div>

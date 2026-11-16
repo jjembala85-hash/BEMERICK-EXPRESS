@@ -10,6 +10,7 @@ import {
   type StaffActionState,
 } from "@/app/newsroom/(protected)/staff/actions";
 import { ROLES, roleLabels, type Role } from "@/lib/permissions";
+import { submitWithoutReset } from "@/lib/forms";
 
 const inputClass =
   "w-full rounded-md border border-mist bg-surface px-3 py-2.5 text-ink outline-none focus:border-lake-ink focus:ring-2 focus:ring-lake-ink/20";
@@ -56,7 +57,7 @@ export function InviteForm() {
   const [state, action, pending] = useActionState<InviteState, FormData>(inviteStaff, {});
   return (
     <div>
-      <form action={action} className="grid gap-4 sm:grid-cols-2">
+      <form onSubmit={submitWithoutReset(action)} className="grid gap-4 sm:grid-cols-2">
         <div>
           <label htmlFor="inv-name" className={labelClass}>Full name</label>
           <input id="inv-name" name="name" required maxLength={80} className={inputClass} />
@@ -114,7 +115,7 @@ export function StaffRowControls({
   return (
     <div className="mt-2">
       <div className="flex flex-wrap items-center gap-2">
-        <form action={roleAction} className="flex items-center gap-1.5">
+        <form onSubmit={submitWithoutReset(roleAction)} className="flex items-center gap-1.5">
           <input type="hidden" name="userId" value={userId} />
           <label htmlFor={`role-${userId}`} className="sr-only">Role for {name}</label>
           <select
@@ -130,17 +131,21 @@ export function StaffRowControls({
             ))}
           </select>
         </form>
-        <form action={linkAction}>
+        <form onSubmit={submitWithoutReset(linkAction)}>
           <input type="hidden" name="userId" value={userId} />
           <button type="submit" disabled={linkPending} className={smallButton}>
             {linkPending ? "Making…" : "New link"}
           </button>
         </form>
         <form
-          action={activeAction}
-          onSubmit={(e) => {
-            if (active && !window.confirm(`Deactivate ${name}? They will be signed out and unable to sign in.`)) e.preventDefault();
-          }}
+          
+            onSubmit={(e) => {
+              if (active && !window.confirm(`Deactivate ${name}? They will be signed out and unable to sign in.`)) {
+                e.preventDefault();
+                return;
+              }
+              submitWithoutReset(activeAction)(e);
+            }}
         >
           <input type="hidden" name="userId" value={userId} />
           <input type="hidden" name="active" value={active ? "false" : "true"} />

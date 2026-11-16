@@ -1,44 +1,35 @@
 import Link from "next/link";
-import { connection } from "next/server";
 import { Suspense } from "react";
-import { getLatestStories } from "@/lib/queries/public";
+import { getHomepage, type StoryCard } from "@/lib/queries/public";
 import { Kicker, StoryList } from "@/components/story-list";
 import { formatEAT } from "@/lib/dates";
 import { PhotoFrame } from "@/components/photo";
 
-// Interim homepage: newest story leads, the rest follow. The editor-curated
-// Lead and Top Stories board replaces this in Phase 3.
+// Lead and Top Stories come from the editors' homepage board; empty or expired
+// places fall back to the newest stories (lib/homepage.ts).
 export default function Home() {
   return (
-    <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:py-10">
+    <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:py-10">
       <Suspense fallback={<p className="text-slate">Loading the latest stories…</p>}>
-        <Latest />
+        <FrontPage />
       </Suspense>
     </div>
   );
 }
 
-async function Latest() {
-  await connection();
-  const stories = await getLatestStories({ limit: 21 });
-
-  if (stories.length === 0) return <ComingSoon />;
-  const [lead, ...rest] = stories;
+async function FrontPage() {
+  const { lead, top, latest } = await getHomepage();
+  if (!lead) return <ComingSoon />;
 
   return (
     <>
       <article className="border-b-2 border-crane-gold pb-8">
-        <Kicker section={lead.sectionName} type={lead.type} />
-        <Link href={`/${lead.sectionSlug}/${lead.slug}`} className="group mt-2 block">
+        <Link href={`/${lead.sectionSlug}/${lead.slug}`} className="group block">
           {lead.photo && (
-            <PhotoFrame
-              photo={lead.photo}
-              sizes="(min-width: 56rem) 54rem, 100vw"
-              priority
-              className="mb-4 rounded-md"
-            />
+            <PhotoFrame photo={lead.photo} sizes="(min-width: 64rem) 62rem, 100vw" priority className="mb-4 rounded-md" />
           )}
-          <h1 className="font-serif text-3xl font-bold leading-tight text-ink group-hover:underline sm:text-5xl">
+          <Kicker section={lead.sectionName} type={lead.type} />
+          <h1 className="mt-2 font-serif text-3xl font-bold leading-tight text-ink group-hover:underline sm:text-5xl">
             {lead.headline}
           </h1>
           {lead.standfirst && (
@@ -48,13 +39,41 @@ async function Latest() {
         {lead.publishedAt && <p className="mt-3 text-sm text-slate">{formatEAT(lead.publishedAt)}</p>}
       </article>
 
-      {rest.length > 0 && (
-        <section className="mt-8">
-          <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-slate">Latest</h2>
-          <StoryList stories={rest} />
+      {top.length > 0 && (
+        <section aria-labelledby="top-heading" className="mt-8 border-b border-mist pb-8">
+          <h2 id="top-heading" className="text-xs font-semibold uppercase tracking-[0.12em] text-slate">Top stories</h2>
+          <ul className="mt-4 grid gap-6 sm:grid-cols-2">
+            {top.map((s) => (
+              <TopCard key={s.id} story={s} />
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {latest.length > 0 && (
+        <section aria-labelledby="latest-heading" className="mt-8">
+          <h2 id="latest-heading" className="text-xs font-semibold uppercase tracking-[0.12em] text-slate">Latest</h2>
+          <StoryList stories={latest} />
         </section>
       )}
     </>
+  );
+}
+
+function TopCard({ story }: { story: StoryCard }) {
+  return (
+    <li>
+      <Link href={`/${story.sectionSlug}/${story.slug}`} className="group block">
+        {story.photo && (
+          <PhotoFrame photo={story.photo} sizes="(min-width: 40rem) 30rem, 100vw" className="mb-3 rounded-md" />
+        )}
+        <Kicker section={story.sectionName} type={story.type} />
+        <h3 className="mt-1.5 font-serif text-xl font-semibold leading-snug text-ink group-hover:underline sm:text-[1.35rem]">
+          {story.headline}
+        </h3>
+        {story.standfirst && <p className="mt-1.5 line-clamp-3 text-slate">{story.standfirst}</p>}
+      </Link>
+    </li>
   );
 }
 

@@ -67,9 +67,12 @@ function writeCollapsed(value: boolean) {
 export function SiteChrome({
   children,
   footer,
+  banner,
 }: {
   children: React.ReactNode;
   footer: React.ReactNode;
+  /** Breaking-news strip, shown above the page content when active. */
+  banner?: React.ReactNode;
 }) {
   const collapsed = useSyncExternalStore(subscribe, readCollapsed, () => false);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -132,6 +135,7 @@ export function SiteChrome({
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col">
+          {banner}
           <main className="flex-1">{children}</main>
           {footer}
         </div>

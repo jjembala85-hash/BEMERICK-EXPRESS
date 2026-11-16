@@ -13,6 +13,7 @@ import {
 } from "@/lib/workflow";
 import { RichTextEditor } from "./rich-text-editor";
 import { LeadPhoto, type LeadPhotoValue } from "./lead-photo";
+import { submitWithoutReset } from "@/lib/forms";
 
 export type StoryFormValues = {
   id?: string;
@@ -94,7 +95,7 @@ export function StoryForm({
   const needsChecklist = actions.some((a) => GOES_PUBLIC.has(a));
 
   return (
-    <form action={action} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
+    <form onSubmit={submitWithoutReset(action)} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
       {values.id && <input type="hidden" name="id" value={values.id} />}
 
       <div className="space-y-5">
