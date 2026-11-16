@@ -5,7 +5,7 @@ export type TeamMember = {
   slug: string;
   name: string;
   role: string;
-  photo: string; // 640 x 800 WebP in public/team
+  photo: string; // 256 x 320 WebP in public/team
   bio: string[];
   focus: string[];
   linkedin?: string;

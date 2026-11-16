@@ -41,22 +41,26 @@ export default function TeamPage() {
 
 function MemberCard({ member }: { member: TeamMember }) {
   return (
-    <li id={member.slug} className="flex flex-col overflow-hidden rounded-lg border border-mist bg-surface">
-      {/* Plain <img>: the portrait is already sized for the web (about 20–40 KB). */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={member.photo}
-        alt={`Portrait of ${member.name}`}
-        width={640}
-        height={800}
-        loading="lazy"
-        decoding="async"
-        className="aspect-[4/5] w-full bg-mist object-cover"
-      />
-      <div className="flex flex-1 flex-col p-5">
-        <h3 className="font-serif text-2xl font-bold text-ink">{member.name}</h3>
-        <p className="mt-0.5 text-sm font-semibold uppercase tracking-[0.08em] text-lake-ink">{member.role}</p>
-        <div className="mt-3 space-y-3 leading-relaxed text-ink">
+    <li id={member.slug} className="flex flex-col rounded-lg border border-mist bg-surface p-5">
+      <div className="flex items-center gap-4">
+        {/* Plain <img>: the portrait is already sized for the web (under 12 KB). */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={member.photo}
+          alt={`Portrait of ${member.name}`}
+          width={256}
+          height={320}
+          loading="lazy"
+          decoding="async"
+          className="aspect-[4/5] w-24 shrink-0 rounded-md bg-mist object-cover sm:w-28"
+        />
+        <div>
+          <h3 className="font-serif text-2xl font-bold leading-tight text-ink">{member.name}</h3>
+          <p className="mt-1 text-sm font-semibold uppercase tracking-[0.08em] text-lake-ink">{member.role}</p>
+        </div>
+      </div>
+      <div className="flex flex-1 flex-col">
+        <div className="mt-4 space-y-3 leading-relaxed text-ink">
           {member.bio.map((p) => (
             <p key={p.slice(0, 24)}>{p}</p>
           ))}
