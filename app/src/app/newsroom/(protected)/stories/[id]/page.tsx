@@ -1,21 +1,24 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { getDb } from "@/db";
-import { article, articleTranslation, media, section } from "@/db/schema";
+import { article, articleTranslation, editorialNote, media, section, user } from "@/db/schema";
 import { requireStaff } from "@/lib/session";
 import { can } from "@/lib/permissions";
 import { isStorageReady, mediaUrl } from "@/lib/media";
+import { formatEAT } from "@/lib/dates";
+import { actionMessages, availableActions, canEditContent, isStatus, type WorkflowAction } from "@/lib/workflow";
 import { StoryForm } from "@/components/newsroom/story-form";
+import { StoryNotes } from "@/components/newsroom/story-notes";
 
 export const metadata: Metadata = { title: "Edit story" };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const flashMessages: Record<string, string> = {
+  ...(actionMessages as Record<WorkflowAction, string>),
   created: "Draft saved.",
-  published: "Published. The story is live.",
 };
 
 export default async function EditStoryPage({
@@ -35,7 +38,9 @@ export default async function EditStoryPage({
       type: article.type,
       sectionId: article.primarySectionId,
       createdBy: article.createdBy,
+      legalHold: article.legalHold,
       firstPublishedAt: article.firstPublishedAt,
+      scheduledAt: article.scheduledAt,
       headline: articleTranslation.headline,
       standfirst: articleTranslation.standfirst,
       slug: articleTranslation.slug,
@@ -57,8 +62,15 @@ export default async function EditStoryPage({
     .where(eq(article.id, id))
     .limit(1);
 
-  if (!story) notFound();
+  if (!story || !isStatus(story.status)) notFound();
   if (story.createdBy !== staff.id && !can(staff.role, "article.edit_any")) notFound();
+
+  const ctx = {
+    role: staff.role,
+    isOwner: story.createdBy === staff.id,
+    status: story.status,
+    legalHold: story.legalHold,
+  };
 
   // The smallest stored size is enough for the editor preview.
   const smallestKey = story.photo
@@ -67,11 +79,25 @@ export default async function EditStoryPage({
       )[0]?.[1] ?? story.photo.r2Key)
     : null;
 
-  const sections = await db
-    .select({ id: section.id, name: section.name })
-    .from(section)
-    .where(eq(section.isActive, true))
-    .orderBy(section.sortOrder);
+  const [sections, notes] = await Promise.all([
+    db
+      .select({ id: section.id, name: section.name })
+      .from(section)
+      .where(eq(section.isActive, true))
+      .orderBy(section.sortOrder),
+    db
+      .select({
+        id: editorialNote.id,
+        kind: editorialNote.kind,
+        body: editorialNote.body,
+        createdAt: editorialNote.createdAt,
+        author: user.name,
+      })
+      .from(editorialNote)
+      .innerJoin(user, eq(user.id, editorialNote.authorId))
+      .where(eq(editorialNote.articleId, story.id))
+      .orderBy(asc(editorialNote.createdAt)),
+  ]);
 
   return (
     <>
@@ -83,7 +109,9 @@ export default async function EditStoryPage({
           </Link>
         )}
       </div>
-      <h1 className="mb-6 mt-2 font-serif text-3xl font-bold text-ink">Edit story</h1>
+      <h1 className="mb-6 mt-2 font-serif text-3xl font-bold text-ink">
+        {canEditContent(ctx) ? "Edit story" : "Story"}
+      </h1>
       <StoryForm
         key={`${story.id}-${story.status}`}
         values={{
@@ -95,7 +123,9 @@ export default async function EditStoryPage({
           type: story.type,
           slug: story.slug,
           body: story.body,
-          slugLocked: Boolean(story.firstPublishedAt),
+          slugLocked: Boolean(story.firstPublishedAt) || story.status === "scheduled",
+          scheduledLabel:
+            story.status === "scheduled" && story.scheduledAt ? `Goes live ${formatEAT(story.scheduledAt)}` : undefined,
           leadPhoto:
             story.photo && smallestKey
               ? {
@@ -108,10 +138,14 @@ export default async function EditStoryPage({
               : null,
         }}
         sections={sections}
-        canPublish={can(staff.role, "article.publish")}
-        canUnpublish={can(staff.role, "article.unpublish")}
+        actions={availableActions(ctx)}
+        editable={canEditContent(ctx)}
         storageReady={isStorageReady()}
         flash={typeof saved === "string" ? flashMessages[saved] : undefined}
+      />
+      <StoryNotes
+        articleId={story.id}
+        notes={notes.map((n) => ({ id: n.id, kind: n.kind, body: n.body, author: n.author, when: formatEAT(n.createdAt) }))}
       />
     </>
   );

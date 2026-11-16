@@ -8,6 +8,13 @@
       "when": 1794771290809,
       "tag": "0000_exotic_maverick",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794830709432,
+      "tag": "0001_editorial_note",
+      "breakpoints": true
     }
   ]
 }

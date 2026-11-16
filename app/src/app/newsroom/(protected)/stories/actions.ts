@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { refresh } from "next/cache";
 import { and, eq, ne } from "drizzle-orm";
 import { getDb } from "@/db";
 import {
@@ -9,6 +10,7 @@ import {
   articleTranslation,
   articleType,
   auditLog,
+  editorialNote,
   media,
   section,
   staffProfile,
@@ -17,12 +19,36 @@ import { requireStaff } from "@/lib/session";
 import { can } from "@/lib/permissions";
 import { parseBody } from "@/lib/rich-text";
 import { slugify } from "@/lib/slug";
+import {
+  GOES_PUBLIC,
+  NOTE_REQUIRED,
+  canEditContent,
+  canTake,
+  isStatus,
+  nextStatus,
+  parseEATDateTime,
+  type StoryContext,
+  type WorkflowAction,
+} from "@/lib/workflow";
 
 export type StoryState = { error?: string; message?: string };
 
 type ArticleType = (typeof articleType.enumValues)[number];
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const WORKFLOW_ACTIONS: readonly WorkflowAction[] = [
+  "submit",
+  "approve",
+  "approve_publish",
+  "request_changes",
+  "spike",
+  "restore",
+  "publish",
+  "schedule",
+  "unschedule",
+  "unpublish",
+];
 
 async function uniqueSlug(base: string, articleId: string) {
   const db = getDb();
@@ -44,42 +70,33 @@ async function uniqueSlug(base: string, articleId: string) {
   return `${base}-${Date.now()}`;
 }
 
+/**
+ * Saves a story and, when a workflow button was pressed, moves it to its next
+ * status. Every rule is checked here on the server via lib/workflow.
+ */
 export async function saveStory(_prev: StoryState, formData: FormData): Promise<StoryState> {
   const staff = await requireStaff("article.create");
   const db = getDb();
 
   const id = String(formData.get("id") ?? "");
-  const intent = String(formData.get("intent") ?? "save");
-  const headline = String(formData.get("headline") ?? "").trim();
-  const standfirst = String(formData.get("standfirst") ?? "").trim();
-  const sectionId = String(formData.get("sectionId") ?? "");
-  const typeInput = String(formData.get("type") ?? "news");
-  const slugInput = String(formData.get("slug") ?? "").trim();
-  const body = parseBody(String(formData.get("body") ?? ""));
-  const leadMediaInput = String(formData.get("leadMediaId") ?? "");
+  const intentInput = String(formData.get("intent") ?? "save");
+  const action = (WORKFLOW_ACTIONS as readonly string[]).includes(intentInput)
+    ? (intentInput as WorkflowAction)
+    : null;
+  if (!action && intentInput !== "save") return { error: "Unknown action. Reload the page and try again." };
 
-  if (!headline) return { error: "Add a headline." };
-  if (headline.length > 160) return { error: "The headline is too long (160 characters maximum)." };
-  if (!body) return { error: "The story body could not be read. Try again." };
-  const type = (articleType.enumValues as string[]).includes(typeInput)
-    ? (typeInput as ArticleType)
-    : "news";
-
-  const [sectionRow] = await db.select({ id: section.id }).from(section).where(eq(section.id, sectionId)).limit(1);
-  if (!sectionRow) return { error: "Choose a section." };
-
-  let leadMediaId: string | null = null;
-  if (leadMediaInput) {
-    const [photo] = UUID.test(leadMediaInput)
-      ? await db.select({ id: media.id }).from(media).where(eq(media.id, leadMediaInput)).limit(1)
-      : [];
-    if (!photo) return { error: "The lead photo could not be found. Remove it and upload it again." };
-    leadMediaId = photo.id;
-  }
-
-  // Existing story: check the editor is allowed to touch it.
-  let existing: { id: string; status: string; createdBy: string; legalHold: boolean; firstPublishedAt: Date | null } | undefined;
+  // Existing story: load what the rules need.
+  let existing:
+    | {
+        id: string;
+        status: string;
+        createdBy: string;
+        legalHold: boolean;
+        firstPublishedAt: Date | null;
+      }
+    | undefined;
   if (id) {
+    if (!UUID.test(id)) return { error: "This story no longer exists." };
     [existing] = await db
       .select({
         id: article.id,
@@ -91,45 +108,157 @@ export async function saveStory(_prev: StoryState, formData: FormData): Promise<
       .from(article)
       .where(eq(article.id, id))
       .limit(1);
-    if (!existing) return { error: "This story no longer exists." };
-    const own = existing.createdBy === staff.id;
-    if (!own && !can(staff.role, "article.edit_any")) return { error: "You can only edit your own stories." };
-    if (existing.status === "published" && !can(staff.role, "article.publish")) {
-      return { error: "Only an editor can change a published story." };
+    if (!existing || !isStatus(existing.status)) return { error: "This story no longer exists." };
+    if (existing.createdBy !== staff.id && !can(staff.role, "article.edit_any")) {
+      return { error: "You can only work on your own stories." };
     }
   }
 
-  if (intent === "publish") {
-    if (!can(staff.role, "article.publish")) return { error: "You do not have permission to publish." };
-    if (existing?.legalHold) return { error: "This story is on legal hold and cannot be published." };
-    if (!standfirst) return { error: "Add a standfirst (one-sentence summary) before publishing." };
+  const ctx: StoryContext = {
+    role: staff.role,
+    isOwner: existing ? existing.createdBy === staff.id : true,
+    status: existing && isStatus(existing.status) ? existing.status : "draft",
+    legalHold: existing?.legalHold ?? false,
+  };
+  const editable = canEditContent(ctx);
+
+  if (action && !canTake(ctx, action)) {
+    return ctx.legalHold && GOES_PUBLIC.has(action)
+      ? { error: "This story is on legal hold and cannot be published." }
+      : { error: "You can't do that to this story at its current stage. Reload the page to see its latest status." };
   }
-  if (intent === "unpublish" && !can(staff.role, "article.unpublish")) {
-    return { error: "You do not have permission to unpublish." };
+  if (!action && !editable) {
+    return { error: "This story is with an editor, so it can't be changed right now." };
+  }
+
+  // Note or reason, for actions that need one.
+  const note = String(formData.get("note") ?? "").trim();
+  if (action && NOTE_REQUIRED.has(action) && !note) {
+    return {
+      error:
+        action === "request_changes"
+          ? "Write a note telling the writer what to change."
+          : action === "spike"
+            ? "Write a short reason for spiking the story."
+            : "Write the reason for unpublishing. It is kept on record.",
+    };
+  }
+  if (note.length > 2000) return { error: "The note is too long (2,000 characters maximum)." };
+
+  // Schedule time, typed in East Africa Time.
+  let scheduleAt: Date | null = null;
+  if (action === "schedule") {
+    scheduleAt = parseEATDateTime(String(formData.get("scheduleAt") ?? ""));
+    if (!scheduleAt) return { error: "Choose the date and time to publish." };
+    const now = Date.now();
+    if (scheduleAt.getTime() < now + 60_000) return { error: "Choose a time at least a minute from now, or publish now." };
+    if (scheduleAt.getTime() > now + 365 * 24 * 60 * 60 * 1000) return { error: "Choose a time within the next year." };
+  }
+
+  // Story content: read and checked only when this person may change it.
+  let content:
+    | {
+        headline: string;
+        standfirst: string;
+        body: object;
+        sectionId: string;
+        type: ArticleType;
+        leadMediaId: string | null;
+        slugInput: string;
+      }
+    | undefined;
+  if (editable) {
+    const headline = String(formData.get("headline") ?? "").trim();
+    const standfirst = String(formData.get("standfirst") ?? "").trim();
+    const sectionId = String(formData.get("sectionId") ?? "");
+    const typeInput = String(formData.get("type") ?? "news");
+    const slugInput = String(formData.get("slug") ?? "").trim();
+    const body = parseBody(String(formData.get("body") ?? ""));
+    const leadMediaInput = String(formData.get("leadMediaId") ?? "");
+
+    if (!headline) return { error: "Add a headline." };
+    if (headline.length > 160) return { error: "The headline is too long (160 characters maximum)." };
+    if (!body) return { error: "The story body could not be read. Try again." };
+    const type = (articleType.enumValues as string[]).includes(typeInput) ? (typeInput as ArticleType) : "news";
+
+    const [sectionRow] = UUID.test(sectionId)
+      ? await db.select({ id: section.id }).from(section).where(eq(section.id, sectionId)).limit(1)
+      : [];
+    if (!sectionRow) return { error: "Choose a section." };
+
+    let leadMediaId: string | null = null;
+    if (leadMediaInput) {
+      const [photo] = UUID.test(leadMediaInput)
+        ? await db.select({ id: media.id }).from(media).where(eq(media.id, leadMediaInput)).limit(1)
+        : [];
+      if (!photo) return { error: "The lead photo could not be found. Remove it and upload it again." };
+      leadMediaId = photo.id;
+    }
+    content = { headline, standfirst, body, sectionId: sectionRow.id, type, leadMediaId, slugInput };
+  }
+
+  // A standfirst is needed before a story goes to an editor or to readers.
+  if (action && (action === "submit" || GOES_PUBLIC.has(action))) {
+    const standfirst =
+      content?.standfirst ??
+      (
+        await db
+          .select({ standfirst: articleTranslation.standfirst })
+          .from(articleTranslation)
+          .where(and(eq(articleTranslation.articleId, id), eq(articleTranslation.lang, "en")))
+          .limit(1)
+      )[0]?.standfirst;
+    if (!standfirst) return { error: "Add a standfirst (one-sentence summary) first." };
   }
 
   const articleId = existing?.id ?? crypto.randomUUID();
   const now = new Date();
+  const wasPublished = Boolean(existing?.firstPublishedAt);
 
-  // The web address is fixed once a story has been published, so shared links never break.
-  const slugLocked = Boolean(existing?.firstPublishedAt);
-  const slug = slugLocked ? undefined : await uniqueSlug(slugify(slugInput || headline) || "story", articleId);
+  // The web address is fixed once a story is live or scheduled, so shared links never break.
+  const slugLocked = wasPublished || ctx.status === "scheduled";
+  const slug =
+    content && !slugLocked
+      ? await uniqueSlug(slugify(content.slugInput || content.headline) || "story", articleId)
+      : undefined;
 
-  const statusChange =
-    intent === "publish"
-      ? {
-          status: "published" as const,
+  const statusChange = (() => {
+    if (!action) return ctx.status === "published" ? { updatedPublicAt: now } : {};
+    const status = nextStatus(action);
+    switch (action) {
+      case "publish":
+      case "approve_publish":
+        return {
+          status,
+          scheduledAt: null,
           publishedAt: now,
           firstPublishedAt: existing?.firstPublishedAt ?? now,
-          updatedPublicAt: existing?.firstPublishedAt ? now : null,
-        }
-      : intent === "unpublish"
-        ? { status: "unpublished" as const }
-        : existing?.status === "published"
-          ? { updatedPublicAt: now }
-          : {};
+          updatedPublicAt: wasPublished ? now : null,
+        };
+      case "schedule":
+        // publishedAt is the go-live time; public pages show the story once it passes.
+        return { status, scheduledAt: scheduleAt, publishedAt: scheduleAt };
+      case "unschedule":
+        return { status, scheduledAt: null, ...(wasPublished ? {} : { publishedAt: null }) };
+      default:
+        return { status };
+    }
+  })();
+
+  // Publishing straight from a draft skipped review: logged separately (admin only).
+  const fastTrack = action === "publish" && (ctx.status === "draft" || ctx.status === "changes_requested");
+  const auditAction = action
+    ? fastTrack
+      ? "article.fast_track_publish"
+      : `article.${action}`
+    : existing
+      ? ctx.status === "published"
+        ? "article.update_published"
+        : null
+      : "article.create";
 
   if (!existing) {
+    if (!content) return { error: "Add a headline." };
     const [profile] = await db
       .select({ userId: staffProfile.userId })
       .from(staffProfile)
@@ -139,67 +268,104 @@ export async function saveStory(_prev: StoryState, formData: FormData): Promise<
     await db.batch([
       db.insert(article).values({
         id: articleId,
-        type,
-        primarySectionId: sectionRow.id,
-        leadMediaId,
+        type: content.type,
+        primarySectionId: content.sectionId,
+        leadMediaId: content.leadMediaId,
         createdBy: staff.id,
         ...statusChange,
       }),
       db.insert(articleTranslation).values({
         articleId,
         lang: "en",
-        headline,
-        standfirst: standfirst || null,
-        body,
+        headline: content.headline,
+        standfirst: content.standfirst || null,
+        body: content.body,
         slug: slug!,
       }),
       ...(profile ? [db.insert(articleAuthor).values({ articleId, staffId: staff.id, position: 0 })] : []),
       db.insert(auditLog).values({
         actorId: staff.id,
-        action: intent === "publish" ? "article.create_and_publish" : "article.create",
+        action: action ? `article.create_and_${action}` : "article.create",
         entity: "article",
         entityId: articleId,
-        details: { headline },
+        details: { headline: content.headline },
       }),
     ]);
-    redirect(`/newsroom/stories/${articleId}?saved=${intent === "publish" ? "published" : "created"}`);
+    redirect(`/newsroom/stories/${articleId}?saved=${action ?? "created"}`);
   }
 
   await db.batch([
     db
       .update(article)
-      .set({ type, primarySectionId: sectionRow.id, leadMediaId, ...statusChange })
+      .set({
+        ...(content
+          ? { type: content.type, primarySectionId: content.sectionId, leadMediaId: content.leadMediaId }
+          : {}),
+        ...statusChange,
+      })
       .where(eq(article.id, articleId)),
-    db
-      .update(articleTranslation)
-      .set({ headline, standfirst: standfirst || null, body, ...(slug ? { slug } : {}) })
-      .where(and(eq(articleTranslation.articleId, articleId), eq(articleTranslation.lang, "en"))),
-    ...(intent === "publish" || intent === "unpublish" || existing.status === "published"
+    ...(content
+      ? [
+          db
+            .update(articleTranslation)
+            .set({
+              headline: content.headline,
+              standfirst: content.standfirst || null,
+              body: content.body,
+              ...(slug ? { slug } : {}),
+            })
+            .where(and(eq(articleTranslation.articleId, articleId), eq(articleTranslation.lang, "en"))),
+        ]
+      : []),
+    ...(note && action
+      ? [db.insert(editorialNote).values({ articleId, authorId: staff.id, kind: action, body: note })]
+      : []),
+    ...(auditAction
       ? [
           db.insert(auditLog).values({
             actorId: staff.id,
-            action:
-              intent === "publish"
-                ? "article.publish"
-                : intent === "unpublish"
-                  ? "article.unpublish"
-                  : "article.update_published",
+            action: auditAction,
             entity: "article",
             entityId: articleId,
-            details: { headline, fromStatus: existing.status },
+            details: {
+              fromStatus: ctx.status,
+              ...(action ? { toStatus: nextStatus(action) } : {}),
+              ...(scheduleAt ? { scheduledFor: scheduleAt.toISOString() } : {}),
+              ...(note ? { note } : {}),
+            },
           }),
         ]
       : []),
   ]);
 
-  return {
-    message:
-      intent === "publish"
-        ? "Published. The story is live."
-        : intent === "unpublish"
-          ? "Unpublished. The story is no longer visible to readers."
-          : existing.status === "published"
-            ? "Changes saved and live."
-            : "Draft saved.",
-  };
+  // Status changed: reload so the buttons, notes and read-only state match the new stage.
+  if (action) redirect(`/newsroom/stories/${articleId}?saved=${action}`);
+  return { message: ctx.status === "published" ? "Changes saved and live." : "Draft saved." };
+}
+
+export type NoteState = { error?: string; ok?: number };
+
+/** A general comment on a story, visible to everyone who can open it in the newsroom. */
+export async function addNote(prev: NoteState, formData: FormData): Promise<NoteState> {
+  const staff = await requireStaff("article.create");
+  const articleId = String(formData.get("articleId") ?? "");
+  const body = String(formData.get("body") ?? "").trim();
+  if (!body) return { error: "Write the note first." };
+  if (body.length > 2000) return { error: "The note is too long (2,000 characters maximum)." };
+  if (!UUID.test(articleId)) return { error: "This story no longer exists." };
+
+  const db = getDb();
+  const [story] = await db
+    .select({ createdBy: article.createdBy })
+    .from(article)
+    .where(eq(article.id, articleId))
+    .limit(1);
+  if (!story) return { error: "This story no longer exists." };
+  if (story.createdBy !== staff.id && !can(staff.role, "article.edit_any")) {
+    return { error: "You can only comment on your own stories." };
+  }
+
+  await db.insert(editorialNote).values({ articleId, authorId: staff.id, kind: "note", body });
+  refresh();
+  return { ok: (prev.ok ?? 0) + 1 };
 }

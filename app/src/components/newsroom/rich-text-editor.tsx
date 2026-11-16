@@ -6,7 +6,15 @@ import { useState } from "react";
 
 const EMPTY_DOC = { type: "doc", content: [{ type: "paragraph" }] };
 
-export function RichTextEditor({ name, initial }: { name: string; initial: unknown }) {
+export function RichTextEditor({
+  name,
+  initial,
+  editable = true,
+}: {
+  name: string;
+  initial: unknown;
+  editable?: boolean;
+}) {
   const start: JSONContent =
     initial && typeof initial === "object" && "type" in initial ? (initial as JSONContent) : EMPTY_DOC;
   const [json, setJson] = useState(() => JSON.stringify(start));
@@ -25,6 +33,7 @@ export function RichTextEditor({ name, initial }: { name: string; initial: unkno
       }),
     ],
     content: start,
+    editable,
     editorProps: {
       attributes: {
         class:
@@ -40,7 +49,7 @@ export function RichTextEditor({ name, initial }: { name: string; initial: unkno
 
   return (
     <div className="rounded-md border border-mist bg-surface focus-within:border-lake-ink">
-      <Toolbar editor={editor} />
+      {editable ? <Toolbar editor={editor} /> : null}
       <EditorContent editor={editor} />
       <div className="border-t border-mist px-4 py-1.5 text-right text-xs text-slate">{words} words</div>
       <input type="hidden" name={name} value={json} />

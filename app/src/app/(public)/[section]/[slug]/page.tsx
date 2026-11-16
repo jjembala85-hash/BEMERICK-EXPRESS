@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       type: "article",
       title: story.headline,
       description: story.standfirst ?? undefined,
-      publishedTime: story.firstPublishedAt?.toISOString(),
+      publishedTime: (story.firstPublishedAt ?? story.publishedAt)?.toISOString(),
       modifiedTime: story.updatedPublicAt?.toISOString(),
       images: story.photo
         ? [{ url: story.photo.src, width: story.photo.width ?? undefined, height: story.photo.height ?? undefined, alt: story.photo.alt }]
@@ -69,7 +69,7 @@ async function Story({ params }: { params: Props["params"] }) {
         {story.authors.length > 0 && (
           <p className="font-semibold text-ink">By {story.authors.map((a) => a.name).join(" and ")}</p>
         )}
-        {story.firstPublishedAt && <p>{formatEAT(story.firstPublishedAt)}</p>}
+        {(story.firstPublishedAt ?? story.publishedAt) && <p>{formatEAT((story.firstPublishedAt ?? story.publishedAt)!)}</p>}
         {story.updatedPublicAt && <p>Updated {formatEAT(story.updatedPublicAt)}</p>}
       </div>
 

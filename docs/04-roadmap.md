@@ -91,7 +91,11 @@ Admin signs in → writes a story with a photo → publishes → it appears on t
 
 Review states and transitions (Architecture §6) · review queue · editorial notes · scheduling (cron) · revision history · corrections · legal hold + pre-publish checklist · **homepage board (Lead + Top Stories)** · breaking banner control · media library with required credit/alt · staff invites · author pages · tags/topic pages · audit log viewer · 2FA for Admin/Editor.
 
-**Done when:** Writer submits → Editor requests changes → Writer resubmits → Editor approves and schedules → story auto-publishes → Editor places it as Lead → breaking banner shows and auto-expires.
+| Done | In progress / next |
+|------|--------------------|
+| ✅ 16 Nov: review states and transitions (tested), review queue, editorial notes, scheduling (D-027), unpublish with reason, admin fast-track | Revision history · corrections · legal hold + pre-publish checklist · homepage board · breaking banner · media library · staff invites · author pages · tags · audit log viewer · 2FA |
+
+**Done when:** Writer submits → Editor requests changes → Writer resubmits → Editor approves and schedules → story auto-publishes → Editor places it as Lead → breaking banner shows and auto-expires. *(Verified 16 Nov in a browser test up to "story auto-publishes".)*
 
 ## Phase 4 · Live, bulletins, share kit (week 8)
 

@@ -185,6 +185,27 @@ export const articleTag = pgTable(
   (t) => [primaryKey({ columns: [t.articleId, t.tagId] })],
 );
 
+/**
+ * Notes between writers and editors on a story: why it was sent back, spiked
+ * or unpublished, plus general comments. Never shown to readers.
+ */
+export const editorialNote = pgTable(
+  "editorial_note",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    articleId: uuid("article_id")
+      .notNull()
+      .references(() => article.id, { onDelete: "cascade" }),
+    authorId: text("author_id")
+      .notNull()
+      .references(() => user.id),
+    kind: text("kind").notNull().default("note"), // note | request_changes | spike | unpublish
+    body: text("body").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("editorial_note_article_idx").on(t.articleId, t.createdAt)],
+);
+
 /** Append-only security trail. */
 export const auditLog = pgTable(
   "audit_log",

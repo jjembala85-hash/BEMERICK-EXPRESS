@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { count, eq } from "drizzle-orm";
+import { getDb } from "@/db";
+import { article } from "@/db/schema";
 import { requireStaff } from "@/lib/session";
-import { roleLabels } from "@/lib/permissions";
+import { can, roleLabels } from "@/lib/permissions";
+import { publishDueStories } from "@/lib/scheduling";
 import { signOut } from "../actions";
 
 export const metadata: Metadata = {
@@ -20,6 +24,12 @@ export default function NewsroomLayout({ children }: { children: React.ReactNode
 
 async function NewsroomShell({ children }: { children: React.ReactNode }) {
   const staff = await requireStaff();
+  const reviewer = can(staff.role, "article.review");
+  // Tidy scheduled stories whose time has passed (readers already see them).
+  await publishDueStories();
+  const waiting = reviewer
+    ? ((await getDb().select({ n: count() }).from(article).where(eq(article.status, "in_review")))[0]?.n ?? 0)
+    : 0;
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -37,6 +47,16 @@ async function NewsroomShell({ children }: { children: React.ReactNode }) {
             <Link href="/newsroom/stories" className="rounded px-2.5 py-1.5 text-sm font-semibold hover:bg-white/10">
               Stories
             </Link>
+            {reviewer && (
+              <Link href="/newsroom/review" className="flex items-center gap-1.5 rounded px-2.5 py-1.5 text-sm font-semibold hover:bg-white/10">
+                Review
+                {waiting > 0 && (
+                  <span className="rounded-full bg-accent px-1.5 text-xs font-bold text-brand-deep" aria-label={`${waiting} waiting`}>
+                    {waiting}
+                  </span>
+                )}
+              </Link>
+            )}
           </nav>
           <Link href="/" className="ml-auto hidden text-sm hover:underline sm:block">
             View site

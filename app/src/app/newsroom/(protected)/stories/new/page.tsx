@@ -4,8 +4,8 @@ import { eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { section } from "@/db/schema";
 import { requireStaff } from "@/lib/session";
-import { can } from "@/lib/permissions";
 import { isStorageReady } from "@/lib/media";
+import { availableActions } from "@/lib/workflow";
 import { StoryForm } from "@/components/newsroom/story-form";
 
 export const metadata: Metadata = { title: "New story" };
@@ -25,8 +25,8 @@ export default async function NewStoryPage() {
       <StoryForm
         values={{ status: "draft", headline: "", standfirst: "", sectionId: "", type: "news", slug: "", body: null, slugLocked: false }}
         sections={sections}
-        canPublish={can(staff.role, "article.publish")}
-        canUnpublish={false}
+        actions={availableActions({ role: staff.role, isOwner: true, status: "draft", legalHold: false })}
+        editable
         storageReady={isStorageReady()}
       />
     </>

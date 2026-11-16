@@ -1,6 +1,6 @@
 // The ONLY place public pages read stories from. Every query goes through
 // isPublic(), so drafts and unpublished stories can never leak to readers.
-import { and, desc, eq, lte } from "drizzle-orm";
+import { and, desc, eq, inArray, lte } from "drizzle-orm";
 import { connection } from "next/server";
 import { getDb } from "@/db";
 import { article, articleAuthor, articleTranslation, media, section, staffProfile } from "@/db/schema";
@@ -8,8 +8,10 @@ import { toPhoto } from "@/lib/media";
 
 // "Now" must be read on a real visit, not while Next.js prerenders or prefetches,
 // so every query below awaits connection() before calling isPublic().
+// A scheduled story counts as live once its go-live time (publishedAt) has passed,
+// so scheduling works without a cron job (D-027).
 const isPublic = () =>
-  and(eq(article.status, "published"), lte(article.publishedAt, new Date()));
+  and(inArray(article.status, ["published", "scheduled"]), lte(article.publishedAt, new Date()));
 
 const cardFields = {
   id: article.id,

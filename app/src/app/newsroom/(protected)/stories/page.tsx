@@ -1,18 +1,24 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { article, articleTranslation, section, user } from "@/db/schema";
 import { requireStaff } from "@/lib/session";
 import { can } from "@/lib/permissions";
 import { formatEAT } from "@/lib/dates";
+import { isStatus, statusLabels } from "@/lib/workflow";
 
 export const metadata: Metadata = { title: "Stories" };
 
 const statusStyle: Record<string, string> = {
   published: "bg-lake-ink/15 text-lake-ink",
+  scheduled: "bg-lake-ink/15 text-lake-ink",
+  approved: "bg-lake-ink/10 text-lake-ink",
+  in_review: "bg-crane-gold/20 text-ink",
+  changes_requested: "bg-ember/10 text-ember",
   draft: "bg-mist text-ink",
   unpublished: "bg-ember/10 text-ember",
+  spiked: "bg-ember/10 text-ember",
 };
 
 export default async function StoriesPage() {
@@ -34,7 +40,11 @@ export default async function StoriesPage() {
     .innerJoin(articleTranslation, eq(articleTranslation.articleId, article.id))
     .innerJoin(section, eq(section.id, article.primarySectionId))
     .innerJoin(user, eq(user.id, article.createdBy))
-    .where(seeAll ? eq(articleTranslation.lang, "en") : eq(article.createdBy, staff.id))
+    .where(
+      seeAll
+        ? eq(articleTranslation.lang, "en")
+        : and(eq(articleTranslation.lang, "en"), eq(article.createdBy, staff.id)),
+    )
     .orderBy(desc(article.updatedAt))
     .limit(100);
 
@@ -59,7 +69,7 @@ export default async function StoriesPage() {
                 {r.headline}
               </Link>
               <span className={`rounded px-2 py-0.5 text-xs font-semibold uppercase tracking-wide ${statusStyle[r.status] ?? "bg-mist text-ink"}`}>
-                {r.status.replace("_", " ")}
+                {isStatus(r.status) ? statusLabels[r.status] : r.status}
               </span>
               <span className="text-sm text-slate">{r.sectionName}</span>
               <span className="text-sm text-slate">{r.author}</span>
