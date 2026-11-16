@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { getStory } from "@/lib/queries/public";
-import { Kicker } from "@/components/story-list";
+import { getRelatedStories, getStory } from "@/lib/queries/public";
+import { Kicker, StoryList } from "@/components/story-list";
 import { RichText } from "@/lib/rich-text";
 import { formatEAT } from "@/lib/dates";
 import { PhotoFrame } from "@/components/photo";
@@ -88,7 +88,24 @@ async function Story({ params }: { params: Props["params"] }) {
       </div>
 
       <ShareLinks path={path} text={shareText} />
+
+      <Suspense fallback={null}>
+        <Related story={story} />
+      </Suspense>
     </article>
+  );
+}
+
+async function Related({ story }: { story: { id: string; sectionSlug: string; sectionName: string } }) {
+  const related = await getRelatedStories(story);
+  if (related.length === 0) return null;
+  return (
+    <aside aria-labelledby="related-heading" className="mt-12 border-t-2 border-crane-gold pt-6">
+      <h2 id="related-heading" className="text-xs font-semibold uppercase tracking-[0.12em] text-slate">
+        More from {story.sectionName}
+      </h2>
+      <StoryList stories={related} showSection={false} />
+    </aside>
   );
 }
 

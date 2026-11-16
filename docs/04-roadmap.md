@@ -66,7 +66,7 @@ gantt
 | 1.2 | Better Auth: email+password, sign-up disabled, admin plugin, roles Admin/Editor/Writer | ✅ 15 Nov |
 | 1.3 | First-admin setup script | ✅ 15 Nov (`npm run create-admin` and one-time `/newsroom/setup` page) |
 | 1.4 | `/newsroom` layout with server-side session + role check | ✅ 15 Nov |
-| 1.5 | `can(user, permission)` helper + tests | 🟦 Helper built; automated tests still to write |
+| 1.5 | `can(user, permission)` helper + tests | ✅ 16 Nov (5 tests, `npm test`) |
 | 1.6 | Seed sections | ✅ 15 Nov (`npm run db:seed`, on `dev` and `main`) |
 | 1.7 | Brand tokens + fonts in Tailwind config | ✅ 15 Nov |
 
@@ -79,10 +79,10 @@ gantt
 | 2.1 | Global layout: header, swipe strip, footer, dark mode | ✅ 15 Nov (collapsible sidebar, D-023) |
 | 2.2 | Basic story editor (headline, standfirst, Tiptap body, section, lead photo upload to R2) | 🟦 Text editing done 15 Nov; lead photo upload built 16 Nov (D-026), storage connected and tested; first real photo upload in the editor still to confirm |
 | 2.3 | Publish / unpublish (admin) | ✅ 15 Nov |
-| 2.4 | Article page (byline, times, photo + credit, body, related) | 🟦 Byline, times, body, share links done; photo + caption + credit built 16 Nov (also on homepage, section lists and link previews); related stories still to build |
+| 2.4 | Article page (byline, times, photo + credit, body, related) | ✅ 16 Nov (photo + caption + credit, also on homepage, section lists and link previews; "More from <section>" related stories) |
 | 2.5 | Homepage (latest-based) + section pages | ✅ 15 Nov |
 | 2.6 | Caching + on-publish revalidation | ⬜ Pages read the database on every visit for now; needs the R2 cache |
-| 2.7 | Favicon, manifest, page titles `Headline · BEMERICK EXPRESS` | 🟦 Tab icon and titles done; web app manifest still to add |
+| 2.7 | Favicon, manifest, page titles `Headline · BEMERICK EXPRESS` | ✅ 16 Nov (web app manifest, home-screen and Apple icons) |
 
 ### 🏁 Milestone 1 · First story live
 Admin signs in → writes a story with a photo → publishes → it appears on the homepage, its section page and its own URL → a signed-out visitor reads it on a phone → drafts are not reachable by URL.

@@ -55,6 +55,12 @@ export async function getLatestStories(options: { limit?: number; sectionSlug?: 
   return rows.map((row) => ({ ...row, photo: toPhoto(row.photo) }));
 }
 
+/** Latest stories from the same section, without the one being read. */
+export async function getRelatedStories(story: { id: string; sectionSlug: string }, limit = 4) {
+  const stories = await getLatestStories({ sectionSlug: story.sectionSlug, limit: limit + 1 });
+  return stories.filter((s) => s.id !== story.id).slice(0, limit);
+}
+
 export async function getStory(sectionSlug: string, slug: string, lang = "en") {
   await connection();
   const db = getDb();
