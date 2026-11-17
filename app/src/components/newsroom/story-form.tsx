@@ -13,6 +13,7 @@ import {
 } from "@/lib/workflow";
 import { RichTextEditor } from "./rich-text-editor";
 import { LeadPhoto, type LeadPhotoValue } from "./lead-photo";
+import { TagField } from "./tag-field";
 import { submitWithoutReset } from "@/lib/forms";
 
 export type StoryFormValues = {
@@ -26,6 +27,8 @@ export type StoryFormValues = {
   body: unknown;
   slugLocked: boolean;
   leadPhoto?: LeadPhotoValue | null;
+  /** Tag names, comma-separated. */
+  tags?: string;
   /** "Goes live 17 Nov 2026, 08:00 EAT" for scheduled stories. */
   scheduledLabel?: string;
   legalHold?: boolean;
@@ -77,6 +80,7 @@ export function StoryForm({
   editable,
   storageReady,
   flash,
+  tagSuggestions = [],
 }: {
   values: StoryFormValues;
   sections: { id: string; name: string }[];
@@ -84,6 +88,7 @@ export function StoryForm({
   editable: boolean;
   storageReady: boolean;
   flash?: string;
+  tagSuggestions?: string[];
 }) {
   const [state, action, pending] = useActionState<StoryState, FormData>(saveStory, {});
   const [headline, setHeadline] = useState(values.headline);
@@ -284,6 +289,7 @@ export function StoryForm({
               ))}
             </select>
           </div>
+          <TagField initial={values.tags ?? ""} suggestions={tagSuggestions} inputClass={inputClass} labelClass={labelClass} />
           <div>
             <label htmlFor="slug" className={labelClass}>Web address ending</label>
             <input

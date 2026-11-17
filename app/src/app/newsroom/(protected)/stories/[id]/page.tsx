@@ -21,6 +21,7 @@ import { actionMessages, availableActions, canEditContent, isStatus, type Workfl
 import { StoryForm } from "@/components/newsroom/story-form";
 import { StoryNotes } from "@/components/newsroom/story-notes";
 import { StorySafety } from "@/components/newsroom/story-safety";
+import { storyTagText, tagNames } from "@/lib/queries/tags";
 
 export const metadata: Metadata = { title: "Edit story" };
 
@@ -85,7 +86,7 @@ export default async function EditStoryPage({
   // The smallest stored size is enough for the editor preview.
   const previewKey = story.photo ? smallestKey(story.photo) : null;
 
-  const [sections, notes, corrections, revisions] = await Promise.all([
+  const [sections, notes, corrections, revisions, tagText, tagSuggestions] = await Promise.all([
     db
       .select({ id: section.id, name: section.name })
       .from(section)
@@ -122,6 +123,8 @@ export default async function EditStoryPage({
       .where(eq(articleRevision.articleId, story.id))
       .orderBy(desc(articleRevision.createdAt))
       .limit(100),
+    storyTagText(story.id),
+    tagNames(),
   ]);
 
   return (
@@ -150,6 +153,7 @@ export default async function EditStoryPage({
           body: story.body,
           slugLocked: Boolean(story.firstPublishedAt) || story.status === "scheduled",
           legalHold: story.legalHold,
+          tags: tagText,
           scheduledLabel:
             story.status === "scheduled" && story.scheduledAt ? `Goes live ${formatEAT(story.scheduledAt)}` : undefined,
           leadPhoto:
@@ -167,6 +171,7 @@ export default async function EditStoryPage({
         actions={availableActions(ctx)}
         editable={canEditContent(ctx)}
         storageReady={isStorageReady()}
+        tagSuggestions={tagSuggestions}
         flash={typeof saved === "string" ? flashMessages[saved] : undefined}
       />
       <StorySafety

@@ -14,6 +14,7 @@ export type Permission =
   | "media.upload"
   | "media.manage"
   | "sections.manage"
+  | "tags.manage"
   | "corrections.manage"
   | "legal.clear"
   | "staff.manage"
@@ -30,6 +31,7 @@ const editorPermissions: Permission[] = [
   "media.upload",
   "media.manage",
   "sections.manage",
+  "tags.manage",
   "corrections.manage",
   "audit.view",
 ];

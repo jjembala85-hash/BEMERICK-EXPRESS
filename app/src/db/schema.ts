@@ -86,6 +86,8 @@ export const tag = pgTable("tag", {
   id: uuid("id").primaryKey().defaultRandom(),
   slug: text("slug").notNull().unique(),
   name: text("name").notNull(),
+  // One or two sentences shown at the top of the topic page.
+  description: text("description"),
   ...timestamps,
 });
 

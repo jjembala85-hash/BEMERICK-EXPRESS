@@ -111,6 +111,23 @@ async function Story({ params }: { params: Props["params"] }) {
         </aside>
       )}
 
+      {story.tags.length > 0 && (
+        <nav aria-label="Topics" className="mt-8">
+          <ul className="flex flex-wrap gap-2">
+            {story.tags.map((t) => (
+              <li key={t.slug}>
+                <Link
+                  href={`/topic/${t.slug}`}
+                  className="inline-block rounded-full border border-mist bg-surface px-3 py-1 text-sm font-semibold text-lake-ink hover:border-lake-ink"
+                >
+                  {t.name}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )}
+
       <ShareLinks path={path} text={shareText} />
 
       <Suspense fallback={null}>

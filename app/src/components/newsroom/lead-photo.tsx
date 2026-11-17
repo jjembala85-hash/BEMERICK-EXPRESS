@@ -272,7 +272,7 @@ export function LeadPhoto({
               type="button"
               disabled={busy}
               onClick={upload}
-              className="rounded-md bg-lake-ink px-3 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60"
+              className="rounded-md bg-brand px-3 py-2 text-sm font-semibold text-white hover:bg-brand-deep disabled:opacity-60"
             >
               {busy ? "Uploading…" : "Upload photo"}
             </button>

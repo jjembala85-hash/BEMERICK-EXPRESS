@@ -7,16 +7,20 @@ import { requireStaff } from "@/lib/session";
 import { isStorageReady } from "@/lib/media";
 import { availableActions } from "@/lib/workflow";
 import { StoryForm } from "@/components/newsroom/story-form";
+import { tagNames } from "@/lib/queries/tags";
 
 export const metadata: Metadata = { title: "New story" };
 
 export default async function NewStoryPage() {
   const staff = await requireStaff("article.create");
-  const sections = await getDb()
-    .select({ id: section.id, name: section.name })
-    .from(section)
-    .where(eq(section.isActive, true))
-    .orderBy(section.sortOrder);
+  const [sections, tagSuggestions] = await Promise.all([
+    getDb()
+      .select({ id: section.id, name: section.name })
+      .from(section)
+      .where(eq(section.isActive, true))
+      .orderBy(section.sortOrder),
+    tagNames(),
+  ]);
 
   return (
     <>
@@ -28,6 +32,7 @@ export default async function NewStoryPage() {
         actions={availableActions({ role: staff.role, isOwner: true, status: "draft", legalHold: false })}
         editable
         storageReady={isStorageReady()}
+        tagSuggestions={tagSuggestions}
       />
     </>
   );

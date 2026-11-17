@@ -9,6 +9,7 @@ import {
   articleAuthor,
   articleCorrection,
   articleRevision,
+  articleTag,
   articleTranslation,
   articleType,
   auditLog,
@@ -21,6 +22,8 @@ import { requireStaff } from "@/lib/session";
 import { can } from "@/lib/permissions";
 import { parseBody } from "@/lib/rich-text";
 import { slugify } from "@/lib/slug";
+import { parseTags, type TagInput } from "@/lib/tags";
+import { ensureTags } from "@/lib/queries/tags";
 import {
   GOES_PUBLIC,
   NOTE_REQUIRED,
@@ -168,6 +171,7 @@ export async function saveStory(_prev: StoryState, formData: FormData): Promise<
         type: ArticleType;
         leadMediaId: string | null;
         slugInput: string;
+        tags: TagInput[];
       }
     | undefined;
   if (editable) {
@@ -197,7 +201,9 @@ export async function saveStory(_prev: StoryState, formData: FormData): Promise<
       if (!photo) return { error: "The lead photo could not be found. Remove it and upload it again." };
       leadMediaId = photo.id;
     }
-    content = { headline, standfirst, body, sectionId: sectionRow.id, type, leadMediaId, slugInput };
+    const parsedTags = parseTags(String(formData.get("tags") ?? ""));
+    if ("error" in parsedTags) return { error: parsedTags.error };
+    content = { headline, standfirst, body, sectionId: sectionRow.id, type, leadMediaId, slugInput, tags: parsedTags.tags };
   }
 
   // A standfirst is needed before a story goes to an editor or to readers.
@@ -300,6 +306,16 @@ export async function saveStory(_prev: StoryState, formData: FormData): Promise<
         : null
       : "article.create";
 
+  // Tags typed for the first time are created; rows are swapped in the batch below.
+  const tagIds = content ? await ensureTags(content.tags) : null;
+  const tagRows = () =>
+    tagIds
+      ? [
+          db.delete(articleTag).where(eq(articleTag.articleId, articleId)),
+          ...(tagIds.length ? [db.insert(articleTag).values(tagIds.map((tagId) => ({ articleId, tagId })))] : []),
+        ]
+      : [];
+
   if (!existing) {
     if (!content) return { error: "Add a headline." };
     const [profile] = await db
@@ -326,6 +342,7 @@ export async function saveStory(_prev: StoryState, formData: FormData): Promise<
         slug: slug!,
       }),
       ...(profile ? [db.insert(articleAuthor).values({ articleId, staffId: staff.id, position: 0 })] : []),
+      ...tagRows(),
       ...revisionInsert(),
       db.insert(auditLog).values({
         actorId: staff.id,
@@ -361,6 +378,7 @@ export async function saveStory(_prev: StoryState, formData: FormData): Promise<
             .where(and(eq(articleTranslation.articleId, articleId), eq(articleTranslation.lang, "en"))),
         ]
       : []),
+    ...tagRows(),
     ...revisionInsert(),
     ...(note && action
       ? [db.insert(editorialNote).values({ articleId, authorId: staff.id, kind: action, body: note })]

@@ -16,6 +16,7 @@ const allPermissions: Permission[] = [
   "media.upload",
   "media.manage",
   "sections.manage",
+  "tags.manage",
   "corrections.manage",
   "legal.clear",
   "staff.manage",
@@ -39,7 +40,7 @@ test("writer cannot publish, unpublish, edit others' stories or open staff setti
 });
 
 test("editor runs the newsroom but cannot manage staff, settings or skip review", () => {
-  for (const p of ["article.publish", "article.unpublish", "article.edit_any", "homepage.manage", "media.manage", "audit.view"] as const) {
+  for (const p of ["article.publish", "article.unpublish", "article.edit_any", "homepage.manage", "media.manage", "tags.manage", "audit.view"] as const) {
     assert.ok(can("editor", p), p);
   }
   for (const p of ["staff.manage", "settings.manage", "article.fast_track", "legal.clear"] as const) {

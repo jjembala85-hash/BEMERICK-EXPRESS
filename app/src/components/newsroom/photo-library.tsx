@@ -97,7 +97,7 @@ export function LibraryUpload({ storageReady }: { storageReady: boolean }) {
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
-              <button type="submit" disabled={busy} className="rounded-md bg-lake-ink px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60">
+              <button type="submit" disabled={busy} className="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-deep disabled:opacity-60">
                 {busy ? "Uploading…" : "Add to library"}
               </button>
               <button type="button" disabled={busy} onClick={reset} className={quietButton}>Cancel</button>

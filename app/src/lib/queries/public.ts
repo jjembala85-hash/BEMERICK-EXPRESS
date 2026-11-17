@@ -7,12 +7,14 @@ import {
   article,
   articleAuthor,
   articleCorrection,
+  articleTag,
   articleTranslation,
   breakingAlert,
   homepageSlot,
   media,
   section,
   staffProfile,
+  tag,
 } from "@/db/schema";
 import { toPhoto } from "@/lib/media";
 import { assembleHomepage } from "@/lib/homepage";
@@ -48,9 +50,9 @@ const cardFields = {
 export type StoryCard = Awaited<ReturnType<typeof getLatestStories>>[number];
 
 export async function getLatestStories(
-  options: { limit?: number; offset?: number; sectionSlug?: string; authorId?: string; lang?: string } = {},
+  options: { limit?: number; offset?: number; sectionSlug?: string; authorId?: string; tagId?: string; lang?: string } = {},
 ) {
-  const { limit = 20, offset = 0, sectionSlug, authorId, lang = "en" } = options;
+  const { limit = 20, offset = 0, sectionSlug, authorId, tagId, lang = "en" } = options;
   await connection();
   const rows = await getDb()
     .select(cardFields)
@@ -68,6 +70,9 @@ export async function getLatestStories(
               article.id,
               getDb().select({ id: articleAuthor.articleId }).from(articleAuthor).where(eq(articleAuthor.staffId, authorId)),
             )
+          : undefined,
+        tagId
+          ? inArray(article.id, getDb().select({ id: articleTag.articleId }).from(articleTag).where(eq(articleTag.tagId, tagId)))
           : undefined,
       ),
     )
@@ -175,13 +180,20 @@ export async function getStory(sectionSlug: string, slug: string, lang = "en") {
     .where(eq(articleAuthor.articleId, story.id))
     .orderBy(articleAuthor.position);
 
+  const tags = await db
+    .select({ name: tag.name, slug: tag.slug })
+    .from(articleTag)
+    .innerJoin(tag, eq(tag.id, articleTag.tagId))
+    .where(eq(articleTag.articleId, story.id))
+    .orderBy(asc(tag.name));
+
   const corrections = await db
     .select({ id: articleCorrection.id, body: articleCorrection.body, createdAt: articleCorrection.createdAt })
     .from(articleCorrection)
     .where(eq(articleCorrection.articleId, story.id))
     .orderBy(asc(articleCorrection.createdAt));
 
-  return { ...story, photo: toPhoto(story.photo), authors, corrections };
+  return { ...story, photo: toPhoto(story.photo), authors, tags, corrections };
 }
 
 /** Latest corrections on stories readers can see, for the public Corrections page. */
@@ -264,4 +276,15 @@ export async function getActiveBreaking(lang = "en") {
     if (target) href = `/${target.sectionSlug}/${target.slug}`;
   }
   return { id: alert.id, text: alert.text, href };
+}
+
+/** A topic tag for its public page. Null when the tag does not exist. */
+export async function getTag(slug: string) {
+  await connection();
+  const [row] = await getDb()
+    .select({ id: tag.id, name: tag.name, slug: tag.slug, description: tag.description })
+    .from(tag)
+    .where(eq(tag.slug, slug))
+    .limit(1);
+  return row ?? null;
 }
