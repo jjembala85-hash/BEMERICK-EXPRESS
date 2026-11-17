@@ -131,11 +131,18 @@ export default async function EditStoryPage({
     <>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link href="/newsroom/stories" className="text-sm font-semibold text-lake-ink hover:underline">← Stories</Link>
-        {story.status === "published" && (
-          <Link href={`/${story.sectionSlug}/${story.slug}`} className="text-sm font-semibold text-lake-ink hover:underline">
-            View live story →
-          </Link>
-        )}
+        <span className="flex flex-wrap gap-4">
+          {can(staff.role, "audit.view") && (
+            <Link href={`/newsroom/audit?story=${story.id}`} className="text-sm font-semibold text-lake-ink hover:underline">
+              History
+            </Link>
+          )}
+          {story.status === "published" && (
+            <Link href={`/${story.sectionSlug}/${story.slug}`} className="text-sm font-semibold text-lake-ink hover:underline">
+              View live story →
+            </Link>
+          )}
+        </span>
       </div>
       <h1 className="mb-6 mt-2 font-serif text-3xl font-bold text-ink">
         {canEditContent(ctx) ? "Edit story" : "Story"}

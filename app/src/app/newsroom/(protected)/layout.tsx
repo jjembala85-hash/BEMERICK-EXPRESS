@@ -39,6 +39,7 @@ async function NewsroomShell({ children }: { children: React.ReactNode }) {
     { href: "/newsroom/tags", label: "Tags", show: can(staff.role, "tags.manage") },
     { href: "/newsroom/homepage", label: "Homepage", show: can(staff.role, "homepage.manage") },
     { href: "/newsroom/staff", label: "Staff", show: can(staff.role, "staff.manage") },
+    { href: "/newsroom/audit", label: "History", show: can(staff.role, "audit.view") },
   ].filter((l) => l.show);
   const navLinks = links.map((l) => (
     <Link
