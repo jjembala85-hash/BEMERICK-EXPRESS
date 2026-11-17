@@ -29,6 +29,13 @@
       "when": 1794837531043,
       "tag": "0003_homepage_breaking",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794904549612,
+      "tag": "0004_staff_photo",
+      "breakpoints": true
     }
   ]
 }

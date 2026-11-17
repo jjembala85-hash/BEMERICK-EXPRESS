@@ -69,7 +69,7 @@ export async function deletePhoto(_prev: PhotoState, formData: FormData): Promis
   const { staff, row } = found;
 
   if (await isPhotoInUse(row.id)) {
-    return { error: "This photo is used by a story or a kept past version, so it cannot be deleted." };
+    return { error: "This photo is used by a story, a kept past version or a staff profile, so it cannot be deleted." };
   }
 
   const db = getDb();

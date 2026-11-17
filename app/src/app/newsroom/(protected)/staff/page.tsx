@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { asc, eq } from "drizzle-orm";
+import Link from "next/link";
+import { asc, eq, sql } from "drizzle-orm";
 import { getDb } from "@/db";
 import { staffProfile, user } from "@/db/schema";
 import { requireStaff } from "@/lib/session";
@@ -20,6 +21,8 @@ export default async function StaffPage() {
         role: user.role,
         banned: user.banned,
         jobTitle: staffProfile.jobTitle,
+        hasProfile: sql<boolean>`${staffProfile.userId} is not null`,
+        isPublic: staffProfile.isPublic,
       })
       .from(user)
       .leftJoin(staffProfile, eq(staffProfile.userId, user.id))
@@ -54,6 +57,14 @@ export default async function StaffPage() {
                   <span className="font-semibold text-ink">{p.name}</span>
                   <span className="text-sm text-slate">{p.email}</span>
                   {p.jobTitle && <span className="text-sm text-slate">· {p.jobTitle}</span>}
+                  {p.hasProfile && (
+                    <Link
+                      href={p.id === me.id ? "/newsroom/profile" : `/newsroom/staff/${p.id}`}
+                      className="text-sm font-semibold text-lake-ink hover:underline"
+                    >
+                      Profile{p.isPublic ? " (public)" : ""}
+                    </Link>
+                  )}
                   <span
                     className={`rounded px-2 py-0.5 text-xs font-semibold ${
                       p.banned ? "bg-ember/10 text-ember" : state === "Active" ? "bg-lake-ink/15 text-lake-ink" : "bg-crane-gold/20 text-ink"

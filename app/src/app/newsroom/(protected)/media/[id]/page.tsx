@@ -8,7 +8,7 @@ import { requireStaff } from "@/lib/session";
 import { can } from "@/lib/permissions";
 import { toPhoto } from "@/lib/media";
 import { formatEAT } from "@/lib/dates";
-import { isPhotoInUse } from "@/lib/queries/media";
+import { isPhotoInUse, photoProfiles } from "@/lib/queries/media";
 import { isStatus, statusLabels } from "@/lib/workflow";
 import { DeletePhotoButton, PhotoDetailsForm } from "@/components/newsroom/photo-library";
 
@@ -44,7 +44,7 @@ export default async function PhotoPage({ params }: PageProps<"/newsroom/media/[
     .limit(1);
   if (!row) notFound();
 
-  const [stories, inUse] = await Promise.all([
+  const [stories, inUse, profiles] = await Promise.all([
     db
       .select({ id: article.id, status: article.status, headline: articleTranslation.headline })
       .from(article)
@@ -53,6 +53,7 @@ export default async function PhotoPage({ params }: PageProps<"/newsroom/media/[
       .orderBy(desc(article.updatedAt))
       .limit(50),
     isPhotoInUse(row.id),
+    photoProfiles(row.id),
   ]);
 
   const photo = toPhoto(row);
@@ -105,6 +106,11 @@ export default async function PhotoPage({ params }: PageProps<"/newsroom/media/[
               ))}
             </ul>
           )}
+          {profiles.length > 0 && (
+            <p className="mt-3 text-sm text-ink">
+              Profile photo of {profiles.map((p) => p.name).join(", ")}.
+            </p>
+          )}
         </div>
 
         <aside>
@@ -117,7 +123,7 @@ export default async function PhotoPage({ params }: PageProps<"/newsroom/media/[
             <div className="mt-8 border-t border-mist pt-4">
               {inUse ? (
                 <p className="text-sm text-slate">
-                  This photo cannot be deleted because a story, or a kept past version of one, uses it.
+                  This photo cannot be deleted because a story, a kept past version of one, or a staff profile uses it.
                 </p>
               ) : (
                 <DeletePhotoButton mediaId={row.id} />

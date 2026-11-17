@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { Suspense } from "react";
 import { technologyTeam, type TeamMember } from "@/lib/team";
+import { getPublicAuthors } from "@/lib/queries/public";
 
 export const metadata: Metadata = {
   title: "Our team",
@@ -32,10 +35,53 @@ export default function TeamPage() {
         </ul>
       </section>
 
-      <p className="mt-12 border-t border-mist pt-6 text-sm text-slate">
-        Our journalists and editors will be introduced here as the newsroom grows.
-      </p>
+      <section aria-labelledby="newsroom-heading" className="mt-12 border-t border-mist pt-8">
+        <h2 id="newsroom-heading" className="text-xs font-semibold uppercase tracking-[0.12em] text-slate">
+          Newsroom
+        </h2>
+        <Suspense fallback={<p className="mt-4 text-sm text-slate">Loading…</p>}>
+          <Newsroom />
+        </Suspense>
+      </section>
     </div>
+  );
+}
+
+async function Newsroom() {
+  const authors = await getPublicAuthors();
+  if (authors.length === 0) {
+    return <p className="mt-4 text-sm text-slate">Our journalists and editors will be introduced here as the newsroom grows.</p>;
+  }
+  return (
+    <ul className="mt-5 grid gap-4 sm:grid-cols-2">
+      {authors.map((a) => (
+        <li key={a.slug}>
+          <Link href={`/author/${a.slug}`} className="group flex items-center gap-4 rounded-lg border border-mist bg-surface p-3">
+            {a.photo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={a.photo.src}
+                srcSet={a.photo.srcSet || undefined}
+                sizes="64px"
+                alt=""
+                width={64}
+                height={80}
+                loading="lazy"
+                className="aspect-[4/5] w-16 shrink-0 rounded bg-mist object-cover object-top"
+              />
+            ) : (
+              <span aria-hidden className="flex aspect-[4/5] w-16 shrink-0 items-center justify-center rounded bg-mist font-serif text-2xl font-bold text-lake-ink">
+                {a.name.charAt(0)}
+              </span>
+            )}
+            <span>
+              <span className="block font-serif text-lg font-bold text-ink group-hover:underline">{a.name}</span>
+              {a.jobTitle && <span className="block text-sm text-slate">{a.jobTitle}</span>}
+            </span>
+          </Link>
+        </li>
+      ))}
+    </ul>
   );
 }
 

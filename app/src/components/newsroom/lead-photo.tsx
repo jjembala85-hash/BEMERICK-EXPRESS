@@ -107,7 +107,27 @@ function LibraryPicker({ onPick, onClose }: { onPick: (photo: PickedPhoto) => vo
   );
 }
 
-export function LeadPhoto({ initial, storageReady }: { initial?: LeadPhotoValue | null; storageReady: boolean }) {
+export function LeadPhoto({
+  initial,
+  storageReady,
+  fieldName = "leadMediaId",
+  label = "Lead photo",
+  hint = "A wide (landscape) photo works best. It is resized automatically.",
+  saveHint = "Save the story to keep photo changes.",
+  portrait = false,
+}: {
+  initial?: LeadPhotoValue | null;
+  storageReady: boolean;
+  fieldName?: string;
+  label?: string;
+  hint?: string;
+  saveHint?: string;
+  /** Show previews as a small 4:5 portrait (profile photos) instead of a wide story frame. */
+  portrait?: boolean;
+}) {
+  const previewClass = portrait
+    ? "aspect-[4/5] w-40 rounded-md bg-mist object-cover object-top"
+    : "aspect-video w-full rounded-md bg-mist object-cover";
   const [photo, setPhoto] = useState<LeadPhotoValue | null>(initial ?? null);
   const [picked, setPicked] = useState<{ file: File; url: string } | null>(null);
   const [browsing, setBrowsing] = useState(false);
@@ -172,8 +192,8 @@ export function LeadPhoto({ initial, storageReady }: { initial?: LeadPhotoValue 
 
   return (
     <div className="rounded-lg border border-mist bg-surface p-4">
-      <p className={labelClass}>Lead photo</p>
-      <input type="hidden" name="leadMediaId" value={photo?.id ?? ""} />
+      <p className={labelClass}>{label}</p>
+      <input type="hidden" name={fieldName} value={photo?.id ?? ""} />
 
       {browsing && !picked && (
         <LibraryPicker
@@ -189,11 +209,11 @@ export function LeadPhoto({ initial, storageReady }: { initial?: LeadPhotoValue 
       {photo && !picked && !browsing && (
         <div>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={photo.previewUrl} alt={photo.altText} className="aspect-video w-full rounded-md bg-mist object-cover" />
+          <img src={photo.previewUrl} alt={photo.altText} className={previewClass} />
           {photo.caption && <p className="mt-2 text-sm text-ink">{photo.caption}</p>}
           <p className="mt-1 text-xs text-slate">Photo: {photo.credit}</p>
           <div className="mt-3">{pickButtons}</div>
-          <p className="mt-2 text-xs text-slate">Save the story to keep photo changes.</p>
+          <p className="mt-2 text-xs text-slate">{saveHint}</p>
         </div>
       )}
 
@@ -202,7 +222,7 @@ export function LeadPhoto({ initial, storageReady }: { initial?: LeadPhotoValue 
           {pickButtons}
           <p className="mt-2 text-xs text-slate">
             {storageReady
-              ? "A wide (landscape) photo works best. It is resized automatically."
+              ? hint
               : "Photo storage is not connected yet, so new photos cannot be uploaded."}
           </p>
         </div>
@@ -211,7 +231,7 @@ export function LeadPhoto({ initial, storageReady }: { initial?: LeadPhotoValue 
       {picked && (
         <div className="space-y-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={picked.url} alt="" className="aspect-video w-full rounded-md bg-mist object-cover" />
+          <img src={picked.url} alt="" className={previewClass} />
           <div>
             <label htmlFor="photo-alt" className={labelClass}>Description (alt text)</label>
             <input

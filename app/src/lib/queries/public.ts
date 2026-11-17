@@ -47,8 +47,10 @@ const cardFields = {
 
 export type StoryCard = Awaited<ReturnType<typeof getLatestStories>>[number];
 
-export async function getLatestStories(options: { limit?: number; sectionSlug?: string; lang?: string } = {}) {
-  const { limit = 20, sectionSlug, lang = "en" } = options;
+export async function getLatestStories(
+  options: { limit?: number; offset?: number; sectionSlug?: string; authorId?: string; lang?: string } = {},
+) {
+  const { limit = 20, offset = 0, sectionSlug, authorId, lang = "en" } = options;
   await connection();
   const rows = await getDb()
     .select(cardFields)
@@ -61,11 +63,71 @@ export async function getLatestStories(options: { limit?: number; sectionSlug?: 
         eq(articleTranslation.lang, lang),
         isPublic(),
         sectionSlug ? eq(section.slug, sectionSlug) : undefined,
+        authorId
+          ? inArray(
+              article.id,
+              getDb().select({ id: articleAuthor.articleId }).from(articleAuthor).where(eq(articleAuthor.staffId, authorId)),
+            )
+          : undefined,
       ),
     )
-    .orderBy(desc(article.publishedAt))
-    .limit(limit);
+    .orderBy(desc(article.publishedAt), desc(article.id))
+    .limit(limit)
+    .offset(offset);
   return rows.map((row) => ({ ...row, photo: toPhoto(row.photo) }));
+}
+
+/** Everyone who has chosen to have an author page, for the Our team page. */
+export async function getPublicAuthors() {
+  await connection();
+  const rows = await getDb()
+    .select({
+      name: staffProfile.displayName,
+      slug: staffProfile.slug,
+      jobTitle: staffProfile.jobTitle,
+      photo: {
+        r2Key: media.r2Key,
+        variants: media.variants,
+        width: media.width,
+        height: media.height,
+        altText: media.altText,
+        credit: media.credit,
+        caption: media.caption,
+      },
+    })
+    .from(staffProfile)
+    .leftJoin(media, eq(media.id, staffProfile.photoMediaId))
+    .where(eq(staffProfile.isPublic, true))
+    .orderBy(asc(staffProfile.displayName));
+  return rows.map((row) => ({ ...row, photo: toPhoto(row.photo) }));
+}
+
+/** A journalist's public profile. Null unless they have chosen to have an author page. */
+export async function getAuthor(slug: string) {
+  await connection();
+  const [row] = await getDb()
+    .select({
+      userId: staffProfile.userId,
+      name: staffProfile.displayName,
+      slug: staffProfile.slug,
+      jobTitle: staffProfile.jobTitle,
+      bio: staffProfile.bio,
+      xHandle: staffProfile.xHandle,
+      photo: {
+        r2Key: media.r2Key,
+        variants: media.variants,
+        width: media.width,
+        height: media.height,
+        altText: media.altText,
+        credit: media.credit,
+        caption: media.caption,
+      },
+    })
+    .from(staffProfile)
+    .leftJoin(media, eq(media.id, staffProfile.photoMediaId))
+    .where(and(eq(staffProfile.slug, slug), eq(staffProfile.isPublic, true)))
+    .limit(1);
+  return row ? { ...row, photo: toPhoto(row.photo) } : null;
 }
 
 /** Latest stories from the same section, without the one being read. */
@@ -102,7 +164,12 @@ export async function getStory(sectionSlug: string, slug: string, lang = "en") {
   if (!story) return null;
 
   const authors = await db
-    .select({ name: staffProfile.displayName, slug: staffProfile.slug, jobTitle: staffProfile.jobTitle })
+    .select({
+      name: staffProfile.displayName,
+      slug: staffProfile.slug,
+      jobTitle: staffProfile.jobTitle,
+      hasPage: staffProfile.isPublic,
+    })
     .from(articleAuthor)
     .innerJoin(staffProfile, eq(staffProfile.userId, articleAuthor.staffId))
     .where(eq(articleAuthor.articleId, story.id))

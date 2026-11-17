@@ -67,7 +67,21 @@ async function Story({ params }: { params: Props["params"] }) {
 
       <div className="mt-5 border-y border-mist py-3 text-sm text-slate">
         {story.authors.length > 0 && (
-          <p className="font-semibold text-ink">By {story.authors.map((a) => a.name).join(" and ")}</p>
+          <p className="font-semibold text-ink">
+            By{" "}
+            {story.authors.map((a, i) => (
+              <span key={a.slug}>
+                {i > 0 && " and "}
+                {a.hasPage ? (
+                  <Link href={`/author/${a.slug}`} rel="author" className="underline decoration-crane-gold decoration-2 underline-offset-2 hover:text-lake-ink">
+                    {a.name}
+                  </Link>
+                ) : (
+                  a.name
+                )}
+              </span>
+            ))}
+          </p>
         )}
         {(story.firstPublishedAt ?? story.publishedAt) && <p>{formatEAT((story.firstPublishedAt ?? story.publishedAt)!)}</p>}
         {story.updatedPublicAt && <p>Updated {formatEAT(story.updatedPublicAt)}</p>}

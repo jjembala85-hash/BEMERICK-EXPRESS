@@ -64,6 +64,8 @@ export const staffProfile = pgTable("staff_profile", {
   jobTitle: text("job_title"),
   bio: text("bio"),
   xHandle: text("x_handle"),
+  // Portrait for the author page; any photo from the library.
+  photoMediaId: uuid("photo_media_id").references((): AnyPgColumn => media.id, { onDelete: "set null" }),
   isPublic: boolean("is_public").notNull().default(false),
   ...timestamps,
 });

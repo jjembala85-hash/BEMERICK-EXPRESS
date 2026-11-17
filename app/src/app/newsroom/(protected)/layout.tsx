@@ -70,12 +70,16 @@ async function NewsroomShell({ children }: { children: React.ReactNode }) {
           <Link href="/" className="ml-auto hidden whitespace-nowrap text-sm hover:underline sm:block">
             View site
           </Link>
-          <span className="ml-auto flex items-center gap-2 text-sm sm:ml-0">
+          <Link
+            href="/newsroom/profile"
+            title="My profile"
+            className="ml-auto flex items-center gap-2 rounded px-1.5 py-1 text-sm hover:bg-white/10 sm:ml-0"
+          >
             <span className="hidden whitespace-nowrap md:inline">{staff.name}</span>
             <span className="rounded bg-accent px-1.5 py-0.5 text-xs font-semibold text-brand-deep">
               {roleLabels[staff.role]}
             </span>
-          </span>
+          </Link>
           <form action={signOut}>
             <button type="submit" className="whitespace-nowrap rounded px-2.5 py-1.5 text-sm font-semibold hover:bg-white/10">
               Sign out
