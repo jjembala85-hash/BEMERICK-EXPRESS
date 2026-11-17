@@ -103,7 +103,7 @@ Review states and transitions (Architecture §6) · review queue · editorial no
 
 | Done | In progress / next |
 |------|--------------------|
-| ✅ 17 Nov: `/live` page, site-wide LIVE pill, newsroom live controls, video bulletins and `/bulletins`, click-to-load YouTube player (D-034) | Share images · share kit · WhatsApp Channel prompts |
+| ✅ 17 Nov: `/live` page, site-wide LIVE pill, newsroom live controls, video bulletins and `/bulletins`, click-to-load YouTube player (D-034); share images in three sizes, newsroom share kit, reader share buttons and WhatsApp Channel follow box (D-036). Hosting now Vercel-only (D-035). **Phase 4 complete** | (none) |
 
 ## Phase 5 · Launch readiness (weeks 9–10)
 

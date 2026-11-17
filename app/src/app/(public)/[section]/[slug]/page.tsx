@@ -8,6 +8,9 @@ import { RichText } from "@/lib/rich-text";
 import { formatEAT } from "@/lib/dates";
 import { PhotoFrame } from "@/components/photo";
 import { YouTubePlayer } from "@/components/youtube-player";
+import { shareImagePath } from "@/lib/share";
+import { siteUrl } from "@/lib/site";
+import { ReaderShare } from "@/components/reader-share";
 
 type Props = PageProps<"/[section]/[slug]">;
 
@@ -24,11 +27,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description: story.standfirst ?? undefined,
       publishedTime: (story.firstPublishedAt ?? story.publishedAt)?.toISOString(),
       modifiedTime: story.updatedPublicAt?.toISOString(),
-      images: story.photo
-        ? [{ url: story.photo.src, width: story.photo.width ?? undefined, height: story.photo.height ?? undefined, alt: story.photo.alt }]
-        : undefined,
+      // Branded card made from the headline and photo (brand §5); ?v= refreshes it after edits.
+      images: [{ url: shareImagePath(section, slug, "link", story.updatedPublicAt ?? story.publishedAt), width: 1200, height: 630, alt: story.headline }],
     },
-    twitter: { card: story.photo ? "summary_large_image" : "summary" },
+    twitter: { card: "summary_large_image" },
   };
 }
 
@@ -48,7 +50,6 @@ async function Story({ params }: { params: Props["params"] }) {
   if (!story) notFound();
 
   const path = `/${story.sectionSlug}/${story.slug}`;
-  const shareText = encodeURIComponent(story.headline);
 
   return (
     <article>
@@ -138,7 +139,7 @@ async function Story({ params }: { params: Props["params"] }) {
         </nav>
       )}
 
-      <ShareLinks path={path} text={shareText} />
+      <ReaderShare url={`${siteUrl()}${path}`} headline={story.headline} />
 
       <Suspense fallback={null}>
         <Related story={story} />
@@ -160,21 +161,3 @@ async function Related({ story }: { story: { id: string; sectionSlug: string; se
   );
 }
 
-function ShareLinks({ path, text }: { path: string; text: string }) {
-  // Relative links are resolved by the share targets once the site has its domain;
-  // until then they use the address the reader is on.
-  const base = process.env.BETTER_AUTH_URL ?? "";
-  const url = encodeURIComponent(`${base}${path}`);
-  const linkClass = "rounded-md border border-mist px-3.5 py-2 text-sm font-semibold text-ink hover:bg-mist";
-  return (
-    <div className="mt-10 flex flex-wrap items-center gap-2 border-t border-mist pt-6">
-      <span className="mr-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate">Share</span>
-      <a className={linkClass} href={`https://wa.me/?text=${text}%20${url}`} target="_blank" rel="noopener noreferrer">
-        WhatsApp
-      </a>
-      <a className={linkClass} href={`https://x.com/intent/post?text=${text}&url=${url}`} target="_blank" rel="noopener noreferrer">
-        X
-      </a>
-    </div>
-  );
-}

@@ -1,15 +1,7 @@
 import Link from "next/link";
 import { sections, watchLinks, aboutLinks, policyLinks } from "@/lib/sections";
+import { followLinks } from "@/lib/site";
 
-// Entries without an href are placeholders until the handles are reserved
-// (roadmap 0.4).
-const followLinks: { name: string; href?: string }[] = [
-  { name: "WhatsApp Channel", href: "https://whatsapp.com/channel/0029VbEIUUY9Gv7XHrIvKs1O" },
-  { name: "TikTok" },
-  { name: "X" },
-  { name: "YouTube" },
-  { name: "Facebook" },
-];
 
 export function SiteFooter() {
   return (

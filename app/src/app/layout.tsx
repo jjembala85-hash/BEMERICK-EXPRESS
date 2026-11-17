@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Newsreader, Instrument_Sans } from "next/font/google";
 import "./globals.css";
+import { siteUrl } from "@/lib/site";
 
 // Brand fonts (docs/01-brand-identity.md §3), self-hosted at build time.
 const newsreader = Newsreader({
@@ -17,6 +18,8 @@ const instrumentSans = Instrument_Sans({
 });
 
 export const metadata: Metadata = {
+  // Makes share-image and canonical addresses absolute in link previews.
+  metadataBase: new URL(siteUrl()),
   title: {
     template: "%s · BEMERICK EXPRESS",
     default: "BEMERICK EXPRESS · News. Insight. Impact.",

@@ -140,6 +140,11 @@ export default async function EditStoryPage({
             </Link>
           )}
           {story.status === "published" && (
+            <Link href={`/newsroom/stories/${story.id}/share`} className="text-sm font-semibold text-lake-ink hover:underline">
+              Share kit
+            </Link>
+          )}
+          {story.status === "published" && (
             <Link href={`/${story.sectionSlug}/${story.slug}`} className="text-sm font-semibold text-lake-ink hover:underline">
               View live story →
             </Link>
