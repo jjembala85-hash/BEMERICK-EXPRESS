@@ -1,18 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { uploadPhoto, type PickedPhoto } from "@/lib/photo-upload";
 
-export type LeadPhotoValue = {
-  id: string;
-  previewUrl: string;
-  altText: string;
-  credit: string;
-  caption: string | null;
-};
-
-// Keep in step with PHOTO_WIDTHS in src/lib/media.ts.
-const WIDTHS = [480, 960, 1600];
-const MIN_WIDTH = 480;
+export type LeadPhotoValue = PickedPhoto;
 
 const inputClass =
   "w-full rounded-md border border-mist bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-lake-ink focus:ring-2 focus:ring-lake-ink/20";
@@ -20,42 +11,106 @@ const labelClass = "mb-1 block text-sm font-semibold text-ink";
 const quietButton =
   "rounded-md border border-mist px-3 py-2 text-sm font-semibold text-ink hover:bg-mist disabled:opacity-60";
 
-function toBlob(canvas: HTMLCanvasElement, type: string, quality: number) {
-  return new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, type, quality));
-}
+// Enter inside these fields must not submit the whole story.
+const noSubmit = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  if (e.key === "Enter") e.preventDefault();
+};
 
-/** Shrinks the photo in the browser so a phone on mobile data uploads kilobytes, not megabytes. */
-async function resize(file: File) {
-  const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
-  try {
-    if (bitmap.width < MIN_WIDTH) {
-      throw new Error(`This photo is too small (${bitmap.width} pixels wide). Use one at least ${MIN_WIDTH} pixels wide.`);
-    }
-    const widths = [...new Set(WIDTHS.map((w) => Math.min(w, bitmap.width)))];
-    const blobs: Blob[] = [];
-    for (const width of widths) {
-      const canvas = document.createElement("canvas");
-      canvas.width = width;
-      canvas.height = Math.round((bitmap.height * width) / bitmap.width);
-      const ctx = canvas.getContext("2d");
-      if (!ctx) throw new Error("This browser cannot prepare photos. Try Chrome.");
-      ctx.imageSmoothingQuality = "high";
-      ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-      // WebP is smaller; browsers that cannot make it (Safari) fall back to JPEG.
-      let blob = await toBlob(canvas, "image/webp", 0.8);
-      if (!blob || blob.type !== "image/webp") blob = await toBlob(canvas, "image/jpeg", 0.82);
-      if (!blob) throw new Error("The photo could not be prepared. Try a different one.");
-      blobs.push(blob);
-    }
-    return blobs;
-  } finally {
-    bitmap.close();
+/** Lists library photos so a story can reuse one instead of uploading it again. */
+function LibraryPicker({ onPick, onClose }: { onPick: (photo: PickedPhoto) => void; onClose: () => void }) {
+  const [query, setQuery] = useState("");
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [photos, setPhotos] = useState<PickedPhoto[]>([]);
+  const [hasMore, setHasMore] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch(`/api/newsroom/media?${new URLSearchParams({ q: search, page: String(page) })}`, { signal: controller.signal })
+      .then(async (res) => {
+        const data = await res.json().catch(() => null);
+        if (!res.ok || !data?.photos) throw new Error(data?.error ?? "The photos could not be loaded. Try again.");
+        setPhotos((before) => (page === 1 ? data.photos : [...before, ...data.photos]));
+        setHasMore(Boolean(data.hasMore));
+      })
+      .catch((e) => {
+        if (!controller.signal.aborted) setError(e instanceof Error ? e.message : "The photos could not be loaded.");
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+    return () => controller.abort();
+  }, [search, page]);
+
+  function load(nextSearch: string, nextPage: number) {
+    if (nextSearch === search && nextPage === page) return;
+    setLoading(true);
+    setError(null);
+    setSearch(nextSearch);
+    setPage(nextPage);
   }
+
+  const runSearch = () => load(query.trim(), 1);
+
+  return (
+    <div className="space-y-3">
+      <div className="flex gap-2">
+        <label htmlFor="library-search" className="sr-only">Search photos</label>
+        <input
+          id="library-search"
+          type="search"
+          value={query}
+          maxLength={100}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              runSearch();
+            }
+          }}
+          placeholder="Search description or credit"
+          className={inputClass}
+        />
+        <button type="button" className={quietButton} onClick={runSearch}>Search</button>
+      </div>
+      {photos.length > 0 && (
+        <ul className="grid max-h-80 grid-cols-2 gap-2 overflow-y-auto pr-1">
+          {photos.map((p) => (
+            <li key={p.id}>
+              <button
+                type="button"
+                onClick={() => onPick(p)}
+                className="block w-full overflow-hidden rounded-md border border-mist text-left hover:border-lake-ink focus:outline-none focus:ring-2 focus:ring-lake-ink"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={p.previewUrl} alt={p.altText} loading="lazy" className="aspect-video w-full bg-mist object-cover" />
+                <span className="block truncate px-1.5 py-1 text-xs text-slate">{p.credit}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {!loading && !error && photos.length === 0 && (
+        <p className="text-sm text-slate">{search ? `No photos match “${search}”.` : "The library is empty. Upload a photo instead."}</p>
+      )}
+      {loading && <p className="text-sm text-slate">Loading photos…</p>}
+      {error && <p role="alert" className="text-sm font-semibold text-ember">{error}</p>}
+      <div className="flex flex-wrap gap-2">
+        {hasMore && !loading && (
+          <button type="button" className={quietButton} onClick={() => load(search, page + 1)}>Show more</button>
+        )}
+        <button type="button" className={quietButton} onClick={onClose}>Cancel</button>
+      </div>
+    </div>
+  );
 }
 
 export function LeadPhoto({ initial, storageReady }: { initial?: LeadPhotoValue | null; storageReady: boolean }) {
   const [photo, setPhoto] = useState<LeadPhotoValue | null>(initial ?? null);
   const [picked, setPicked] = useState<{ file: File; url: string } | null>(null);
+  const [browsing, setBrowsing] = useState(false);
   const [altText, setAltText] = useState("");
   const [credit, setCredit] = useState("");
   const [caption, setCaption] = useState("");
@@ -72,6 +127,7 @@ export function LeadPhoto({ initial, storageReady }: { initial?: LeadPhotoValue 
   function choose(file: File | undefined) {
     setError(null);
     if (!file) return;
+    setBrowsing(false);
     setPicked({ file, url: URL.createObjectURL(file) });
   }
 
@@ -83,28 +139,10 @@ export function LeadPhoto({ initial, storageReady }: { initial?: LeadPhotoValue 
 
   async function upload() {
     if (!picked) return;
-    if (!altText.trim()) return setError("Describe the photo for readers who cannot see it.");
-    if (!credit.trim()) return setError("Add the photo credit. Every photo must be credited.");
     setBusy(true);
     setError(null);
     try {
-      let blobs: Blob[];
-      try {
-        blobs = await resize(picked.file);
-      } catch (e) {
-        throw e instanceof Error && e.message.startsWith("This")
-          ? e
-          : new Error("This file could not be opened as a photo. Use a JPEG, PNG or WebP.");
-      }
-      const form = new FormData();
-      for (const blob of blobs) form.append("file", blob);
-      form.append("altText", altText);
-      form.append("credit", credit);
-      form.append("caption", caption);
-      const res = await fetch("/api/newsroom/media", { method: "POST", body: form });
-      const data = await res.json().catch(() => null);
-      if (!res.ok || !data?.id) throw new Error(data?.error ?? "The upload failed. Check your connection and try again.");
-      setPhoto(data as LeadPhotoValue);
+      setPhoto(await uploadPhoto(picked.file, { altText, credit, caption }));
       setAltText("");
       setCredit("");
       setCaption("");
@@ -116,48 +154,56 @@ export function LeadPhoto({ initial, storageReady }: { initial?: LeadPhotoValue 
     }
   }
 
-  // Enter inside these fields must not submit the whole story.
-  const noSubmit = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") e.preventDefault();
-  };
+  const pickButtons = (
+    <div className="flex flex-wrap gap-2">
+      <button type="button" className={quietButton} disabled={!storageReady} onClick={() => fileInput.current?.click()}>
+        {photo ? "Upload new" : "Upload photo"}
+      </button>
+      <button type="button" className={quietButton} onClick={() => setBrowsing(true)}>
+        Choose from library
+      </button>
+      {photo && (
+        <button type="button" className={quietButton} onClick={() => setPhoto(null)}>
+          Remove
+        </button>
+      )}
+    </div>
+  );
 
   return (
     <div className="rounded-lg border border-mist bg-surface p-4">
       <p className={labelClass}>Lead photo</p>
       <input type="hidden" name="leadMediaId" value={photo?.id ?? ""} />
 
-      {photo && !picked && (
+      {browsing && !picked && (
+        <LibraryPicker
+          onClose={() => setBrowsing(false)}
+          onPick={(p) => {
+            setPhoto(p);
+            setBrowsing(false);
+            setError(null);
+          }}
+        />
+      )}
+
+      {photo && !picked && !browsing && (
         <div>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={photo.previewUrl} alt={photo.altText} className="aspect-video w-full rounded-md bg-mist object-cover" />
           {photo.caption && <p className="mt-2 text-sm text-ink">{photo.caption}</p>}
           <p className="mt-1 text-xs text-slate">Photo: {photo.credit}</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button type="button" className={quietButton} onClick={() => fileInput.current?.click()}>
-              Replace
-            </button>
-            <button type="button" className={quietButton} onClick={() => setPhoto(null)}>
-              Remove
-            </button>
-          </div>
+          <div className="mt-3">{pickButtons}</div>
           <p className="mt-2 text-xs text-slate">Save the story to keep photo changes.</p>
         </div>
       )}
 
-      {!photo && !picked && (
+      {!photo && !picked && !browsing && (
         <div>
-          <button
-            type="button"
-            className={`${quietButton} w-full`}
-            disabled={!storageReady}
-            onClick={() => fileInput.current?.click()}
-          >
-            Choose photo
-          </button>
+          {pickButtons}
           <p className="mt-2 text-xs text-slate">
             {storageReady
               ? "A wide (landscape) photo works best. It is resized automatically."
-              : "Photo storage is not connected yet, so photos cannot be added."}
+              : "Photo storage is not connected yet, so new photos cannot be uploaded."}
           </p>
         </div>
       )}

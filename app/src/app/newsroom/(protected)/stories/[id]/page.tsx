@@ -15,7 +15,7 @@ import {
 } from "@/db/schema";
 import { requireStaff } from "@/lib/session";
 import { can } from "@/lib/permissions";
-import { isStorageReady, mediaUrl } from "@/lib/media";
+import { isStorageReady, mediaUrl, smallestKey } from "@/lib/media";
 import { formatEAT } from "@/lib/dates";
 import { actionMessages, availableActions, canEditContent, isStatus, type WorkflowAction } from "@/lib/workflow";
 import { StoryForm } from "@/components/newsroom/story-form";
@@ -83,11 +83,7 @@ export default async function EditStoryPage({
   };
 
   // The smallest stored size is enough for the editor preview.
-  const smallestKey = story.photo
-    ? (Object.entries((story.photo.variants ?? {}) as Record<string, string>).sort(
-        (a, b) => Number(a[0]) - Number(b[0]),
-      )[0]?.[1] ?? story.photo.r2Key)
-    : null;
+  const previewKey = story.photo ? smallestKey(story.photo) : null;
 
   const [sections, notes, corrections, revisions] = await Promise.all([
     db
@@ -157,10 +153,10 @@ export default async function EditStoryPage({
           scheduledLabel:
             story.status === "scheduled" && story.scheduledAt ? `Goes live ${formatEAT(story.scheduledAt)}` : undefined,
           leadPhoto:
-            story.photo && smallestKey
+            story.photo && previewKey
               ? {
                   id: story.photo.id,
-                  previewUrl: mediaUrl(smallestKey),
+                  previewUrl: mediaUrl(previewKey),
                   altText: story.photo.altText,
                   credit: story.photo.credit,
                   caption: story.photo.caption,

@@ -34,8 +34,7 @@ export function isStorageReady() {
   return storageConfig() !== null;
 }
 
-/** Stores one file. Keys are unique per upload, so files can be cached forever. */
-export async function putMedia(key: string, body: ArrayBuffer, contentType: string) {
+function storageClient() {
   const config = storageConfig();
   if (!config) throw new Error("Photo storage is not connected");
   const client = new AwsClient({
@@ -44,10 +43,17 @@ export async function putMedia(key: string, body: ArrayBuffer, contentType: stri
     service: "s3",
     region: "auto",
   });
+  const objectUrl = (key: string) => `https://${config.accountId}.r2.cloudflarestorage.com/${config.bucket}/${key}`;
+  return { client, objectUrl };
+}
+
+/** Stores one file. Keys are unique per upload, so files can be cached forever. */
+export async function putMedia(key: string, body: ArrayBuffer, contentType: string) {
+  const { client, objectUrl } = storageClient();
   // Sign first, then send the bytes ourselves. client.fetch() wraps the body in a
   // streamed Request, which drops Content-Length; R2 then refuses it (411).
   const signed = await client.sign(
-    `https://${config.accountId}.r2.cloudflarestorage.com/${config.bucket}/${key}`,
+    objectUrl(key),
     {
       method: "PUT",
       headers: {
@@ -64,6 +70,35 @@ export async function putMedia(key: string, body: ArrayBuffer, contentType: stri
     cache: "no-store",
   });
   if (!res.ok) throw new Error(`Photo storage refused the upload (${res.status})`);
+}
+
+/** Removes stored files. R2 answers 204 even when a key is already gone. */
+export async function deleteMediaFiles(keys: string[]) {
+  const { client, objectUrl } = storageClient();
+  await Promise.all(
+    keys.map(async (key) => {
+      const res = await client.fetch(objectUrl(key), { method: "DELETE", cache: "no-store" });
+      if (!res.ok && res.status !== 404) throw new Error(`Photo storage refused the delete (${res.status})`);
+    }),
+  );
+}
+
+/** Every stored key of one photo (all sizes), without repeats. */
+export function allKeys(record: { r2Key: string; variants: unknown }) {
+  const variants = record.variants && typeof record.variants === "object" ? Object.values(record.variants) : [];
+  return [...new Set([record.r2Key, ...variants.filter((k): k is string => typeof k === "string")])];
+}
+
+/** The smallest stored size: enough for thumbnails in the newsroom. */
+export function smallestKey(record: { r2Key: string; variants: unknown }) {
+  const variants =
+    record.variants && typeof record.variants === "object"
+      ? Object.entries(record.variants as Record<string, unknown>).filter(
+          (e): e is [string, string] => /^\d+$/.test(e[0]) && typeof e[1] === "string",
+        )
+      : [];
+  variants.sort((a, b) => Number(a[0]) - Number(b[0]));
+  return variants[0]?.[1] ?? record.r2Key;
 }
 
 export type PhotoRecord = {

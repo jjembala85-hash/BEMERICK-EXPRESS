@@ -12,6 +12,7 @@ export type Permission =
   | "article.unpublish"
   | "homepage.manage"
   | "media.upload"
+  | "media.manage"
   | "sections.manage"
   | "corrections.manage"
   | "legal.clear"
@@ -27,6 +28,7 @@ const editorPermissions: Permission[] = [
   "article.unpublish",
   "homepage.manage",
   "media.upload",
+  "media.manage",
   "sections.manage",
   "corrections.manage",
   "audit.view",

@@ -7,10 +7,33 @@ import { getStaff } from "@/lib/session";
 import { can } from "@/lib/permissions";
 import { readImageInfo } from "@/lib/image-size";
 import { MAX_PHOTO_BYTES, PHOTO_WIDTHS, isStorageReady, mediaUrl, putMedia } from "@/lib/media";
+import { searchPhotos } from "@/lib/queries/media";
 
 const MAX_WIDTH = PHOTO_WIDTHS[PHOTO_WIDTHS.length - 1];
 
 const fail = (status: number, error: string) => Response.json({ error }, { status });
+
+/** Photo library search for the story editor's "Choose from library" panel. */
+export async function GET(request: Request) {
+  const staff = await getStaff();
+  if (!staff) return fail(401, "Your session has ended. Sign in again.");
+  const params = new URL(request.url).searchParams;
+  const page = Math.min(1000, Math.max(1, Number.parseInt(params.get("page") ?? "1", 10) || 1));
+  const { photos, hasMore } = await searchPhotos({ q: params.get("q") ?? "", page });
+  return Response.json(
+    {
+      photos: photos.map((p) => ({
+        id: p.id,
+        previewUrl: p.previewUrl,
+        altText: p.altText,
+        credit: p.credit,
+        caption: p.caption,
+      })),
+      hasMore,
+    },
+    { headers: { "Cache-Control": "private, no-store" } },
+  );
+}
 
 export async function POST(request: Request) {
   // Only accept uploads sent from our own pages.
