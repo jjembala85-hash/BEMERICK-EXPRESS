@@ -2,9 +2,9 @@
 
 import { headers } from "next/headers";
 import { refresh } from "next/cache";
-import { eq, like } from "drizzle-orm";
+import { and, eq, like } from "drizzle-orm";
 import { getDb } from "@/db";
-import { auditLog, staffProfile, user } from "@/db/schema";
+import { auditLog, session, staffProfile, twoFactor, user, verification } from "@/db/schema";
 import { getAuth } from "@/lib/auth";
 import { requireStaff } from "@/lib/session";
 import { isRole, roleLabels } from "@/lib/permissions";
@@ -12,7 +12,7 @@ import { slugify } from "@/lib/slug";
 import { createInviteLink } from "@/lib/invites";
 
 export type InviteState = { error?: string; link?: string; name?: string };
-export type StaffActionState = { error?: string; link?: string; name?: string };
+export type StaffActionState = { error?: string; link?: string; name?: string; message?: string };
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -144,4 +144,30 @@ export async function setStaffActive(_prev: StaffActionState, formData: FormData
   });
   refresh();
   return {};
+}
+
+/**
+ * For someone who lost their phone and backup codes: removes their authenticator
+ * set-up and signs them out everywhere. Admins and editors must set it up again
+ * at their next sign-in.
+ */
+export async function resetTwoFactor(_prev: StaffActionState, formData: FormData): Promise<StaffActionState> {
+  const t = await target(formData);
+  if ("error" in t) return { error: t.error };
+  const db = getDb();
+  await db.batch([
+    db.delete(twoFactor).where(eq(twoFactor.userId, t.person.id)),
+    db.update(user).set({ twoFactorEnabled: false }).where(eq(user.id, t.person.id)),
+    db.delete(session).where(eq(session.userId, t.person.id)),
+    // "Trust this device" records, so no old device can skip the new set-up.
+    db.delete(verification).where(and(eq(verification.value, t.person.id), like(verification.identifier, "trust-device-%"))),
+    db.insert(auditLog).values({
+      actorId: t.admin.id,
+      action: "staff.reset_two_factor",
+      entity: "user",
+      entityId: t.person.id,
+    }),
+  ]);
+  refresh();
+  return { message: "Two-step sign-in reset. They have been signed out and will set it up again when they next sign in." };
 }

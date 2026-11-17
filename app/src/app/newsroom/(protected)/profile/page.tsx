@@ -21,7 +21,18 @@ export default async function MyProfilePage() {
           </Link>
         )}
       </div>
-      <p className="mb-6 mt-1 text-slate">How readers see you on bylines and on your author page.</p>
+      <p className="mb-4 mt-1 text-slate">How readers see you on bylines and on your author page.</p>
+      <p className="mb-6 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-mist bg-surface px-4 py-3 text-sm text-ink">
+        <span>
+          Two-step sign-in:{" "}
+          <span className={`font-semibold ${staff.twoFactorEnabled ? "text-lake-ink" : "text-ember"}`}>
+            {staff.twoFactorEnabled ? "On" : "Off"}
+          </span>
+        </span>
+        <Link href="/newsroom/security" className="font-semibold text-lake-ink hover:underline">
+          {staff.twoFactorEnabled ? "Manage backup codes →" : "Set it up →"}
+        </Link>
+      </p>
       {profile ? (
         <ProfileForm values={profile} storageReady={isStorageReady()} />
       ) : (

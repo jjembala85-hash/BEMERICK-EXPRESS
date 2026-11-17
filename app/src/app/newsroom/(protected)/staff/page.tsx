@@ -5,6 +5,7 @@ import { getDb } from "@/db";
 import { staffProfile, user } from "@/db/schema";
 import { requireStaff } from "@/lib/session";
 import { isRole, roleLabels } from "@/lib/permissions";
+import { mustUseTwoFactor } from "@/lib/two-factor";
 import { pendingInviteUserIds } from "@/lib/invites";
 import { InviteForm, StaffRowControls } from "@/components/newsroom/staff-controls";
 
@@ -20,6 +21,7 @@ export default async function StaffPage() {
         email: user.email,
         role: user.role,
         banned: user.banned,
+        twoFactorEnabled: user.twoFactorEnabled,
         jobTitle: staffProfile.jobTitle,
         hasProfile: sql<boolean>`${staffProfile.userId} is not null`,
         isPublic: staffProfile.isPublic,
@@ -72,11 +74,18 @@ export default async function StaffPage() {
                   >
                     {state}
                   </span>
+                  <span
+                    className={`rounded px-2 py-0.5 text-xs font-semibold ${
+                      p.twoFactorEnabled ? "bg-lake-ink/15 text-lake-ink" : role && mustUseTwoFactor(role) ? "bg-ember/10 text-ember" : "bg-mist text-slate"
+                    }`}
+                  >
+                    Two-step {p.twoFactorEnabled ? "on" : "off"}
+                  </span>
                 </div>
                 {p.id === me.id ? (
                   <p className="mt-1 text-sm text-slate">{role ? roleLabels[role] : p.role} · this is you</p>
                 ) : role ? (
-                  <StaffRowControls userId={p.id} name={p.name} role={role} active={!p.banned} />
+                  <StaffRowControls userId={p.id} name={p.name} role={role} active={!p.banned} twoFactorOn={Boolean(p.twoFactorEnabled)} />
                 ) : (
                   <p className="mt-1 text-sm text-ember">Unknown role “{p.role}”. Contact the developer.</p>
                 )}

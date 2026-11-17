@@ -1,6 +1,6 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { admin } from "better-auth/plugins";
+import { admin, twoFactor } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
 import { getDb } from "@/db";
 import * as schema from "@/db/schema";
@@ -19,6 +19,13 @@ export function createAuth(options: { allowSignUp?: boolean } = {}) {
     },
     plugins: [
       admin({ defaultRole: "writer", adminRoles: ["admin"] }),
+      // Authenticator-app codes (D-033). No SMS/email codes: they cost money and are weaker.
+      twoFactor({
+        issuer: "BX Newsroom",
+        // "Trust this device" on a person's own phone or laptop lasts 30 days.
+        trustDeviceMaxAge: 30 * 24 * 60 * 60,
+        backupCodeOptions: { amount: 10, length: 10 },
+      }),
       nextCookies(), // must stay last
     ],
   });

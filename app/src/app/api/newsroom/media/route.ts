@@ -17,6 +17,7 @@ const fail = (status: number, error: string) => Response.json({ error }, { statu
 export async function GET(request: Request) {
   const staff = await getStaff();
   if (!staff) return fail(401, "Your session has ended. Sign in again.");
+  if (staff.needsTwoFactorSetup) return fail(403, "Set up two-step sign-in first (Newsroom → Security).");
   const params = new URL(request.url).searchParams;
   const page = Math.min(1000, Math.max(1, Number.parseInt(params.get("page") ?? "1", 10) || 1));
   const { photos, hasMore } = await searchPhotos({ q: params.get("q") ?? "", page });
@@ -43,6 +44,7 @@ export async function POST(request: Request) {
 
   const staff = await getStaff();
   if (!staff) return fail(401, "Your session has ended. Sign in again.");
+  if (staff.needsTwoFactorSetup) return fail(403, "Set up two-step sign-in first (Newsroom → Security).");
   if (!can(staff.role, "media.upload")) return fail(403, "You do not have permission to upload photos.");
   if (!isStorageReady()) return fail(503, "Photo storage is not connected yet.");
 

@@ -35,6 +35,10 @@ const labels: Record<string, string> = {
   "staff.change_role": "changed a staff role",
   "staff.deactivate": "deactivated an account",
   "staff.reactivate": "reactivated an account",
+  "staff.reset_two_factor": "reset two-step sign-in for",
+  "security.two_factor_on": "turned on two-step sign-in",
+  "security.two_factor_off": "turned off two-step sign-in",
+  "security.backup_codes": "made new backup codes",
   "profile.update": "updated a byline profile",
   "setup.first_admin": "created the first administrator account",
 };
@@ -55,7 +59,7 @@ export const AUDIT_AREAS = {
   homepage: { label: "Homepage & breaking", prefixes: ["homepage.", "breaking."] },
   photos: { label: "Photos", prefixes: ["media."] },
   tags: { label: "Tags", prefixes: ["tag."] },
-  people: { label: "Staff & profiles", prefixes: ["staff.", "profile.", "setup."] },
+  people: { label: "Staff & profiles", prefixes: ["staff.", "profile.", "setup.", "security."] },
 } as const;
 
 export type AuditArea = keyof typeof AUDIT_AREAS;
@@ -66,7 +70,7 @@ export function isAuditArea(value: unknown): value is AuditArea {
 
 /** Actions that deserve a second look (shown highlighted). */
 export function isSensitive(action: string) {
-  return /^(article\.(unpublish|fast_track_publish|legal_hold|legal_clear|spike|create_and_publish)|staff\.(change_role|deactivate|reactivate|invite)|media\.delete|tag\.(merge|delete)|setup\.)/.test(
+  return /^(article\.(unpublish|fast_track_publish|legal_hold|legal_clear|spike|create_and_publish)|staff\.(change_role|deactivate|reactivate|invite|reset_two_factor)|security\.two_factor_off|media\.delete|tag\.(merge|delete)|setup\.)/.test(
     action,
   );
 }

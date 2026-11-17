@@ -5,6 +5,7 @@ import {
   changeStaffRole,
   inviteStaff,
   newStaffLink,
+  resetTwoFactor,
   setStaffActive,
   type InviteState,
   type StaffActionState,
@@ -101,16 +102,19 @@ export function StaffRowControls({
   name,
   role,
   active,
+  twoFactorOn,
 }: {
   userId: string;
   name: string;
   role: Role;
   active: boolean;
+  twoFactorOn: boolean;
 }) {
   const [linkState, linkAction, linkPending] = useActionState<StaffActionState, FormData>(newStaffLink, {});
   const [roleState, roleAction, rolePending] = useActionState<StaffActionState, FormData>(changeStaffRole, {});
   const [activeState, activeAction, activePending] = useActionState<StaffActionState, FormData>(setStaffActive, {});
-  const error = linkState.error ?? roleState.error ?? activeState.error;
+  const [resetState, resetAction, resetPending] = useActionState<StaffActionState, FormData>(resetTwoFactor, {});
+  const error = linkState.error ?? roleState.error ?? activeState.error ?? resetState.error;
 
   return (
     <div className="mt-2">
@@ -157,8 +161,25 @@ export function StaffRowControls({
             {active ? "Deactivate" : "Reactivate"}
           </button>
         </form>
+        {twoFactorOn && (
+          <form
+            onSubmit={(e) => {
+              if (!window.confirm(`Reset two-step sign-in for ${name}? Only do this if they lost their phone and backup codes. They will be signed out.`)) {
+                e.preventDefault();
+                return;
+              }
+              submitWithoutReset(resetAction)(e);
+            }}
+          >
+            <input type="hidden" name="userId" value={userId} />
+            <button type="submit" disabled={resetPending} className={smallButton}>
+              {resetPending ? "Resetting…" : "Reset two-step"}
+            </button>
+          </form>
+        )}
       </div>
       {error && <p role="alert" className="mt-2 text-sm font-semibold text-ember">{error}</p>}
+      {resetState.message && <p role="status" className="mt-2 text-sm font-semibold text-lake-ink">{resetState.message}</p>}
       {linkState.link && linkState.name && <LinkBox name={linkState.name} link={linkState.link} />}
     </div>
   );
