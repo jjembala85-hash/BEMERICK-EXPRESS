@@ -38,6 +38,8 @@ function Subject({ entry }: { entry: AuditEntry }) {
       return entry.personName ? (
         <Link href={`/newsroom/staff/${entry.entityId}`} className={link}>{entry.personName}</Link>
       ) : null;
+    case "live_stream":
+      return <Link href="/newsroom/live" className={link}>Live streams</Link>;
     case "homepage":
     case "breaking_alert":
       return <Link href="/newsroom/homepage" className={link}>Homepage board</Link>;

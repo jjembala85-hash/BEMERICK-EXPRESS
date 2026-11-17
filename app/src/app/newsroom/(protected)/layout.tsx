@@ -38,6 +38,7 @@ async function NewsroomShell({ children }: { children: React.ReactNode }) {
     { href: "/newsroom/media", label: "Photos", show: can(staff.role, "media.upload") },
     { href: "/newsroom/tags", label: "Tags", show: can(staff.role, "tags.manage") },
     { href: "/newsroom/homepage", label: "Homepage", show: can(staff.role, "homepage.manage") },
+    { href: "/newsroom/live", label: "Live", show: can(staff.role, "homepage.manage") },
     { href: "/newsroom/staff", label: "Staff", show: can(staff.role, "staff.manage") },
     { href: "/newsroom/audit", label: "History", show: can(staff.role, "audit.view") },
   ].filter((l) => l.show);

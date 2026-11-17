@@ -7,6 +7,7 @@ import { Kicker, StoryList } from "@/components/story-list";
 import { RichText } from "@/lib/rich-text";
 import { formatEAT } from "@/lib/dates";
 import { PhotoFrame } from "@/components/photo";
+import { YouTubePlayer } from "@/components/youtube-player";
 
 type Props = PageProps<"/[section]/[slug]">;
 
@@ -87,7 +88,16 @@ async function Story({ params }: { params: Props["params"] }) {
         {story.updatedPublicAt && <p>Updated {formatEAT(story.updatedPublicAt)}</p>}
       </div>
 
-      {story.photo && (
+      {story.youtubeVideoId ? (
+        <figure className="mt-6">
+          <YouTubePlayer
+            videoId={story.youtubeVideoId}
+            title={story.headline}
+            poster={story.photo ? { src: story.photo.src, srcSet: story.photo.srcSet || undefined, alt: story.photo.alt } : null}
+          />
+          {story.photo && <figcaption className="mt-1 text-xs text-slate">Poster photo: {story.photo.credit}</figcaption>}
+        </figure>
+      ) : story.photo && (
         <figure className="mt-6">
           <PhotoFrame photo={story.photo} sizes="(min-width: 44rem) 42rem, 100vw" priority className="rounded-md" />
           <figcaption className="mt-2 text-sm leading-snug text-slate">

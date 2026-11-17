@@ -23,6 +23,11 @@ const labels: Record<string, string> = {
   "homepage.update": "changed the homepage",
   "breaking.start": "started a breaking banner",
   "breaking.clear": "removed the breaking banner",
+  "live.schedule": "scheduled a live stream",
+  "live.start": "went live",
+  "live.end": "ended a live stream",
+  "live.update": "updated a live stream",
+  "live.delete": "deleted a live stream",
   "media.upload": "uploaded a photo",
   "media.update": "changed a photo's details",
   "media.delete": "deleted a photo",
@@ -56,7 +61,7 @@ export function describeAction(action: string) {
 
 export const AUDIT_AREAS = {
   stories: { label: "Stories", prefixes: ["article."] },
-  homepage: { label: "Homepage & breaking", prefixes: ["homepage.", "breaking."] },
+  homepage: { label: "Homepage, breaking & live", prefixes: ["homepage.", "breaking.", "live."] },
   photos: { label: "Photos", prefixes: ["media."] },
   tags: { label: "Tags", prefixes: ["tag."] },
   people: { label: "Staff & profiles", prefixes: ["staff.", "profile.", "setup.", "security."] },

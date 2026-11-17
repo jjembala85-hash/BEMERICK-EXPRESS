@@ -23,6 +23,7 @@ import { can } from "@/lib/permissions";
 import { parseBody } from "@/lib/rich-text";
 import { slugify } from "@/lib/slug";
 import { parseTags, type TagInput } from "@/lib/tags";
+import { parseYouTubeId } from "@/lib/youtube";
 import { ensureTags } from "@/lib/queries/tags";
 import {
   GOES_PUBLIC,
@@ -172,6 +173,7 @@ export async function saveStory(_prev: StoryState, formData: FormData): Promise<
         leadMediaId: string | null;
         slugInput: string;
         tags: TagInput[];
+        youtubeVideoId: string | null;
       }
     | undefined;
   if (editable) {
@@ -203,7 +205,15 @@ export async function saveStory(_prev: StoryState, formData: FormData): Promise<
     }
     const parsedTags = parseTags(String(formData.get("tags") ?? ""));
     if ("error" in parsedTags) return { error: parsedTags.error };
-    content = { headline, standfirst, body, sectionId: sectionRow.id, type, leadMediaId, slugInput, tags: parsedTags.tags };
+
+    // Video bulletins carry a YouTube link; other story types never do.
+    let youtubeVideoId: string | null = null;
+    if (type === "bulletin") {
+      const youtubeInput = String(formData.get("youtube") ?? "").trim();
+      youtubeVideoId = youtubeInput ? parseYouTubeId(youtubeInput) : null;
+      if (youtubeInput && !youtubeVideoId) return { error: "That YouTube link was not recognised. Copy the link from the video's Share button." };
+    }
+    content = { headline, standfirst, body, sectionId: sectionRow.id, type, leadMediaId, slugInput, tags: parsedTags.tags, youtubeVideoId };
   }
 
   // A standfirst is needed before a story goes to an editor or to readers.
@@ -218,6 +228,12 @@ export async function saveStory(_prev: StoryState, formData: FormData): Promise<
           .limit(1)
       )[0]?.standfirst;
     if (!standfirst) return { error: "Add a standfirst (one-sentence summary) first." };
+
+    // A video bulletin needs its video before an editor or readers see it.
+    const video = content
+      ? { type: content.type, youtubeVideoId: content.youtubeVideoId }
+      : (await db.select({ type: article.type, youtubeVideoId: article.youtubeVideoId }).from(article).where(eq(article.id, id)).limit(1))[0];
+    if (video?.type === "bulletin" && !video.youtubeVideoId) return { error: "Add the YouTube link for this video bulletin first." };
   }
 
   // Pre-publish checklist: every item ticked before readers can see the story.
@@ -330,6 +346,7 @@ export async function saveStory(_prev: StoryState, formData: FormData): Promise<
         type: content.type,
         primarySectionId: content.sectionId,
         leadMediaId: content.leadMediaId,
+        youtubeVideoId: content.youtubeVideoId,
         createdBy: staff.id,
         ...statusChange,
       }),
@@ -360,7 +377,12 @@ export async function saveStory(_prev: StoryState, formData: FormData): Promise<
       .update(article)
       .set({
         ...(content
-          ? { type: content.type, primarySectionId: content.sectionId, leadMediaId: content.leadMediaId }
+          ? {
+              type: content.type,
+              primarySectionId: content.sectionId,
+              leadMediaId: content.leadMediaId,
+              youtubeVideoId: content.youtubeVideoId,
+            }
           : {}),
         ...statusChange,
       })

@@ -7,6 +7,7 @@ const typeLabels: Record<string, string> = {
   analysis: "Analysis",
   opinion: "Opinion",
   feature: "Feature",
+  bulletin: "▶ Bulletin",
 };
 
 export function Kicker({ section, type }: { section: string; type?: string }) {

@@ -101,6 +101,10 @@ Review states and transitions (Architecture §6) · review queue · editorial no
 
 `/live` page + site-wide LIVE pill · `/bulletins` page (YouTube, click-to-load) · auto-generated share images (1200×630, 1080×1080, 1080×1920) · share kit with WhatsApp/X/TikTok text · WhatsApp Channel follow prompts.
 
+| Done | In progress / next |
+|------|--------------------|
+| ✅ 17 Nov: `/live` page, site-wide LIVE pill, newsroom live controls, video bulletins and `/bulletins`, click-to-load YouTube player (D-034) | Share images · share kit · WhatsApp Channel prompts |
+
 ## Phase 5 · Launch readiness (weeks 9–10)
 
 | Area | Tasks |

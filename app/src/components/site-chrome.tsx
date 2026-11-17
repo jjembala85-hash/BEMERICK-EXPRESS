@@ -68,11 +68,14 @@ export function SiteChrome({
   children,
   footer,
   banner,
+  livePill,
 }: {
   children: React.ReactNode;
   footer: React.ReactNode;
   /** Breaking-news strip, shown above the page content when active. */
   banner?: React.ReactNode;
+  /** "● LIVE" link in the header, shown only while a stream is on air. */
+  livePill?: React.ReactNode;
 }) {
   const collapsed = useSyncExternalStore(subscribe, readCollapsed, () => false);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -111,10 +114,11 @@ export function SiteChrome({
             </span>
           </Link>
 
+          <span className="ml-auto">{livePill}</span>
           <Link
             href="/search"
             aria-label="Search"
-            className="ml-auto rounded p-2 hover:bg-white/10"
+            className="rounded p-2 hover:bg-white/10"
           >
             <Icon name="search" />
           </Link>

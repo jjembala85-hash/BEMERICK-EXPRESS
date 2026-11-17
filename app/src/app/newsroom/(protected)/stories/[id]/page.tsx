@@ -22,6 +22,7 @@ import { StoryForm } from "@/components/newsroom/story-form";
 import { StoryNotes } from "@/components/newsroom/story-notes";
 import { StorySafety } from "@/components/newsroom/story-safety";
 import { storyTagText, tagNames } from "@/lib/queries/tags";
+import { watchUrl } from "@/lib/youtube";
 
 export const metadata: Metadata = { title: "Edit story" };
 
@@ -50,6 +51,7 @@ export default async function EditStoryPage({
       sectionId: article.primarySectionId,
       createdBy: article.createdBy,
       legalHold: article.legalHold,
+      youtubeVideoId: article.youtubeVideoId,
       firstPublishedAt: article.firstPublishedAt,
       scheduledAt: article.scheduledAt,
       headline: articleTranslation.headline,
@@ -161,6 +163,7 @@ export default async function EditStoryPage({
           slugLocked: Boolean(story.firstPublishedAt) || story.status === "scheduled",
           legalHold: story.legalHold,
           tags: tagText,
+          youtube: story.youtubeVideoId ? watchUrl(story.youtubeVideoId) : "",
           scheduledLabel:
             story.status === "scheduled" && story.scheduledAt ? `Goes live ${formatEAT(story.scheduledAt)}` : undefined,
           leadPhoto:

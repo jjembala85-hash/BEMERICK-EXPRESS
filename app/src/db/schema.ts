@@ -289,6 +289,30 @@ export const breakingAlert = pgTable(
   (t) => [index("breaking_alert_expires_idx").on(t.expiresAt)],
 );
 
+export const liveStatus = pgEnum("live_status", ["scheduled", "live", "ended"]);
+
+/** A YouTube live stream shown on /live, with the site-wide LIVE pill while on air. */
+export const liveStream = pgTable(
+  "live_stream",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    title: text("title").notNull(),
+    youtubeVideoId: text("youtube_video_id").notNull(),
+    status: liveStatus("status").notNull().default("scheduled"),
+    scheduledStart: timestamp("scheduled_start", { withTimezone: true }),
+    summary: text("summary"),
+    keyPoints: jsonb("key_points").$type<string[]>().notNull().default([]),
+    relatedArticleId: uuid("related_article_id").references(() => article.id, { onDelete: "set null" }),
+    startedAt: timestamp("started_at", { withTimezone: true }),
+    endedAt: timestamp("ended_at", { withTimezone: true }),
+    createdBy: text("created_by")
+      .notNull()
+      .references(() => user.id),
+    ...timestamps,
+  },
+  (t) => [index("live_stream_status_idx").on(t.status)],
+);
+
 /** Append-only security trail. */
 export const auditLog = pgTable(
   "audit_log",

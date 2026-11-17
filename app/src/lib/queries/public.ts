@@ -13,6 +13,7 @@ import {
   homepageSlot,
   media,
   section,
+  liveStream,
   staffProfile,
   tag,
 } from "@/db/schema";
@@ -50,9 +51,17 @@ const cardFields = {
 export type StoryCard = Awaited<ReturnType<typeof getLatestStories>>[number];
 
 export async function getLatestStories(
-  options: { limit?: number; offset?: number; sectionSlug?: string; authorId?: string; tagId?: string; lang?: string } = {},
+  options: {
+    limit?: number;
+    offset?: number;
+    sectionSlug?: string;
+    authorId?: string;
+    tagId?: string;
+    type?: (typeof article.type.enumValues)[number];
+    lang?: string;
+  } = {},
 ) {
-  const { limit = 20, offset = 0, sectionSlug, authorId, tagId, lang = "en" } = options;
+  const { limit = 20, offset = 0, sectionSlug, authorId, tagId, type, lang = "en" } = options;
   await connection();
   const rows = await getDb()
     .select(cardFields)
@@ -74,6 +83,7 @@ export async function getLatestStories(
         tagId
           ? inArray(article.id, getDb().select({ id: articleTag.articleId }).from(articleTag).where(eq(articleTag.tagId, tagId)))
           : undefined,
+        type ? eq(article.type, type) : undefined,
       ),
     )
     .orderBy(desc(article.publishedAt), desc(article.id))
@@ -152,6 +162,7 @@ export async function getStory(sectionSlug: string, slug: string, lang = "en") {
       seoDescription: articleTranslation.seoDescription,
       firstPublishedAt: article.firstPublishedAt,
       updatedPublicAt: article.updatedPublicAt,
+      youtubeVideoId: article.youtubeVideoId,
     })
     .from(article)
     .innerJoin(articleTranslation, eq(articleTranslation.articleId, article.id))
@@ -288,3 +299,44 @@ export async function getTag(slug: string) {
     .limit(1);
   return row ?? null;
 }
+
+/**
+ * The stream on air now (if any) and the next scheduled one. A scheduled stream
+ * whose start time passed more than 6 hours ago is treated as stale and skipped.
+ */
+export async function getLiveState() {
+  await connection();
+  const db = getDb();
+  const fields = {
+    id: liveStream.id,
+    title: liveStream.title,
+    youtubeVideoId: liveStream.youtubeVideoId,
+    status: liveStream.status,
+    scheduledStart: liveStream.scheduledStart,
+    startedAt: liveStream.startedAt,
+    summary: liveStream.summary,
+    keyPoints: liveStream.keyPoints,
+    relatedHeadline: articleTranslation.headline,
+    relatedSlug: articleTranslation.slug,
+    relatedSection: section.slug,
+  };
+  // The related story is linked only while readers can see it.
+  const related = (q: ReturnType<ReturnType<typeof db.select<typeof fields>>["from"]>) =>
+    q
+      .leftJoin(article, and(eq(article.id, liveStream.relatedArticleId), isPublic()))
+      .leftJoin(articleTranslation, and(eq(articleTranslation.articleId, article.id), eq(articleTranslation.lang, "en")))
+      .leftJoin(section, eq(section.id, article.primarySectionId));
+  const [[onAir], [next]] = await Promise.all([
+    related(db.select(fields).from(liveStream))
+      .where(eq(liveStream.status, "live"))
+      .orderBy(desc(liveStream.startedAt))
+      .limit(1),
+    related(db.select(fields).from(liveStream))
+      .where(and(eq(liveStream.status, "scheduled"), gt(liveStream.scheduledStart, new Date(Date.now() - 6 * 3600_000))))
+      .orderBy(asc(liveStream.scheduledStart))
+      .limit(1),
+  ]);
+  return { onAir: onAir ?? null, next: next ?? null };
+}
+
+export type LiveStreamView = NonNullable<Awaited<ReturnType<typeof getLiveState>>["onAir"]>;

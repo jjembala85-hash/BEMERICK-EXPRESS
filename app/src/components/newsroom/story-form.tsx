@@ -29,6 +29,8 @@ export type StoryFormValues = {
   leadPhoto?: LeadPhotoValue | null;
   /** Tag names, comma-separated. */
   tags?: string;
+  /** YouTube link for video bulletins. */
+  youtube?: string;
   /** "Goes live 17 Nov 2026, 08:00 EAT" for scheduled stories. */
   scheduledLabel?: string;
   legalHold?: boolean;
@@ -43,6 +45,7 @@ const typeOptions = [
   ["analysis", "Analysis"],
   ["opinion", "Opinion"],
   ["feature", "Feature"],
+  ["bulletin", "Video bulletin"],
 ] as const;
 
 const buttonStyle: Record<WorkflowAction, string> = {
@@ -92,6 +95,7 @@ export function StoryForm({
 }) {
   const [state, action, pending] = useActionState<StoryState, FormData>(saveStory, {});
   const [headline, setHeadline] = useState(values.headline);
+  const [type, setType] = useState(values.type);
   const live = values.status === "published";
   const notice = state.message ?? flash;
   const needsNote = actions.some((a) => NOTE_REQUIRED.has(a));
@@ -283,12 +287,28 @@ export function StoryForm({
           </div>
           <div>
             <label htmlFor="type" className={labelClass}>Type</label>
-            <select id="type" name="type" defaultValue={values.type} className={inputClass}>
+            <select id="type" name="type" value={type} onChange={(e) => setType(e.target.value)} className={inputClass}>
               {typeOptions.map(([value, label]) => (
                 <option key={value} value={value}>{label}</option>
               ))}
             </select>
           </div>
+          {type === "bulletin" && (
+            <div>
+              <label htmlFor="youtube" className={labelClass}>YouTube link</label>
+              <input
+                id="youtube"
+                name="youtube"
+                defaultValue={values.youtube ?? ""}
+                placeholder="https://youtu.be/…"
+                inputMode="url"
+                className={`${inputClass} text-sm`}
+              />
+              <p className="mt-1 text-xs text-slate">
+                Upload the bulletin to the BX YouTube channel first, then paste its link. The lead photo is the poster readers see before they tap play.
+              </p>
+            </div>
+          )}
           <TagField initial={values.tags ?? ""} suggestions={tagSuggestions} inputClass={inputClass} labelClass={labelClass} />
           <div>
             <label htmlFor="slug" className={labelClass}>Web address ending</label>
