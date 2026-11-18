@@ -3,6 +3,7 @@
 import { getStory } from "@/lib/queries/public";
 import { isShareFormat, renderShareImage } from "@/lib/share-image";
 import { siteHost } from "@/lib/site";
+import { MEDIA_KEY, mediaOriginUrl } from "@/lib/media";
 import sharp from "sharp";
 
 export async function GET(request: Request, { params }: RouteContext<"/share/[section]/[slug]/[format]">) {
@@ -13,11 +14,14 @@ export async function GET(request: Request, { params }: RouteContext<"/share/[se
 
   // The largest stored size makes the sharpest card.
   const largest = story.photo?.srcSet.split(", ").at(-1)?.split(" ")[0] ?? story.photo?.src ?? null;
+  // Fetch straight from the bucket rather than looping back through our own /img route.
+  const key = largest?.split("/img/")[1];
+  const photoUrl = key && MEDIA_KEY.test(key) ? mediaOriginUrl(key) : largest;
   const image = await renderShareImage(format, {
     headline: story.headline,
     kicker: story.sectionName,
     breaking: story.priority === "breaking",
-    photoUrl: largest,
+    photoUrl,
     credit: story.photo?.credit,
     host: siteHost(),
   });

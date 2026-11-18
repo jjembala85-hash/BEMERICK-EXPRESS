@@ -2,19 +2,31 @@
 // Uploads go through R2's S3-compatible API so the same code runs on Vercel
 // and on Cloudflare Workers. Photos are read straight from the public bucket.
 import { AwsClient } from "aws4fetch";
+import { siteUrl } from "./site";
 
 /** Widths made in the newsroom browser at upload time. */
 export const PHOTO_WIDTHS = [480, 960, 1600] as const;
 export const MAX_PHOTO_BYTES = 1_500_000;
 
-// Public address of the bucket. Not a secret. Replace with the
-// img.bemerickexpress.com custom domain once the domain is bought (D-021).
-const DEFAULT_PUBLIC_URL = "https://pub-ade49cf4d69b42b3b99c025d69f41570.r2.dev";
+// The bucket's own public address (r2.dev). Not a secret. It is slow and meant
+// for testing, so readers get photos through /img on our site instead, cached at
+// Vercel's edge (D-040). Once the domain is bought, set MEDIA_PUBLIC_URL to
+// https://img.<domain> (Cloudflare's network) and /img is no longer used.
+const R2_PUBLIC_URL = "https://pub-ade49cf4d69b42b3b99c025d69f41570.r2.dev";
 
-const publicBase = () => (process.env.MEDIA_PUBLIC_URL ?? DEFAULT_PUBLIC_URL).replace(/\/+$/, "");
+/** Photo keys look like photos/2026/11/<uuid>-960.webp: anything else is refused by /img. */
+export const MEDIA_KEY = /^photos\/\d{4}\/\d{2}\/[0-9a-f-]{36}-\d{2,4}\.(webp|jpg|jpeg|png)$/;
 
+/** Where readers load a photo from. */
 export function mediaUrl(key: string) {
-  return `${publicBase()}/${key}`;
+  const configured = process.env.MEDIA_PUBLIC_URL;
+  if (configured) return `${configured.replace(/\/+$/, "")}/${key}`;
+  return `${siteUrl()}/img/${key}`;
+}
+
+/** Where the server itself fetches a photo from (straight from the bucket). */
+export function mediaOriginUrl(key: string) {
+  return `${R2_PUBLIC_URL}/${key}`;
 }
 
 function storageConfig() {
