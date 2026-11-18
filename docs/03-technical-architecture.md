@@ -101,7 +101,7 @@ Next.js runs on Cloudflare Workers using the **OpenNext Cloudflare adapter** (`@
 | Budget | Target |
 |--------|--------|
 | Article page total transfer (first visit) | **< 500 KB** including lead image |
-| JavaScript on public pages | **< 100 KB** compressed |
+| JavaScript on public pages | **≤ 160 KB** compressed (framework ~110 KB + our code < 50 KB; revised 18 Nov, D-039) |
 | Largest Contentful Paint (4G mid-range Android) | **< 2.5 s** |
 | Layout shift (CLS) | **< 0.1** (all ad and image slots have reserved sizes) |
 | Fonts | 2 families, ≤ 5 files, self-hosted, `font-display: swap` |

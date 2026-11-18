@@ -19,6 +19,7 @@ import {
   staffProfile,
 } from "@/db/schema";
 import { requireStaff } from "@/lib/session";
+import { publicContentChanged } from "@/lib/cache";
 import { can } from "@/lib/permissions";
 import { parseBody } from "@/lib/rich-text";
 import { slugify } from "@/lib/slug";
@@ -369,6 +370,7 @@ export async function saveStory(_prev: StoryState, formData: FormData): Promise<
         details: { headline: content.headline, ...(goesPublic ? { checklist: "all items confirmed" } : {}) },
       }),
     ]);
+    publicContentChanged();
     redirect(`/newsroom/stories/${articleId}?saved=${action ?? "created"}`);
   }
 
@@ -424,6 +426,7 @@ export async function saveStory(_prev: StoryState, formData: FormData): Promise<
       : []),
   ]);
 
+  publicContentChanged();
   // Status changed: reload so the buttons, notes and read-only state match the new stage.
   if (action) redirect(`/newsroom/stories/${articleId}?saved=${action}`);
   return { message: ctx.status === "published" ? "Changes saved and live." : "Draft saved." };
@@ -452,6 +455,7 @@ export async function addNote(prev: NoteState, formData: FormData): Promise<Note
   }
 
   await db.insert(editorialNote).values({ articleId, authorId: staff.id, kind: "note", body });
+  publicContentChanged();
   refresh();
   return { ok: (prev.ok ?? 0) + 1 };
 }
@@ -500,6 +504,7 @@ export async function setLegalHold(prev: SafetyState, formData: FormData): Promi
       details: { status: story.status, ...(reason ? { reason } : {}) },
     }),
   ]);
+  publicContentChanged();
   refresh();
   return { ok: (prev.ok ?? 0) + 1 };
 }
@@ -550,6 +555,7 @@ export async function addCorrection(prev: SafetyState, formData: FormData): Prom
       details: { correction: body },
     }),
   ]);
+  publicContentChanged();
   refresh();
   return { ok: (prev.ok ?? 0) + 1 };
 }

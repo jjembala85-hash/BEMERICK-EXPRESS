@@ -6,6 +6,7 @@ import { and, eq, ne } from "drizzle-orm";
 import { getDb } from "@/db";
 import { article, auditLog, liveStream } from "@/db/schema";
 import { requireStaff } from "@/lib/session";
+import { publicContentChanged } from "@/lib/cache";
 import { parseEATDateTime } from "@/lib/workflow";
 import { parseYouTubeId } from "@/lib/youtube";
 
@@ -90,6 +91,7 @@ export async function createStream(_prev: LiveState, formData: FormData): Promis
       details: { title: fields.title },
     }),
   ]);
+  publicContentChanged();
   refresh();
   return { message: goLive ? "You are live. The LIVE pill now shows on every page." : "Stream scheduled. /live shows it as “Next live”." };
 }
@@ -114,6 +116,7 @@ export async function updateStream(_prev: LiveState, formData: FormData): Promis
     entityId: id,
     details: { title: fields.title, keyPoints: fields.keyPoints.length },
   });
+  publicContentChanged();
   refresh();
   return { message: "Saved. Readers see the change when they open or refresh /live." };
 }
@@ -138,6 +141,7 @@ export async function setStreamStatus(_prev: LiveState, formData: FormData): Pro
       db.update(liveStream).set({ status: "live", startedAt: now, endedAt: null, updatedAt: now }).where(eq(liveStream.id, id)),
       log("live.start"),
     ]);
+    publicContentChanged();
     redirect("/newsroom/live?done=live");
   }
   if (to === "ended") {
@@ -146,11 +150,13 @@ export async function setStreamStatus(_prev: LiveState, formData: FormData): Pro
       db.update(liveStream).set({ status: "ended", endedAt: now, updatedAt: now }).where(eq(liveStream.id, id)),
       log("live.end"),
     ]);
+    publicContentChanged();
     redirect("/newsroom/live?done=ended");
   }
   if (to === "delete") {
     if (row.status === "live") return { error: "End the stream before deleting it." };
     await db.batch([db.delete(liveStream).where(eq(liveStream.id, id)), log("live.delete")]);
+    publicContentChanged();
     redirect("/newsroom/live?done=deleted");
   }
   return { error: "Unknown action." };

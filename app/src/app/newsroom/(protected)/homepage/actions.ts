@@ -5,6 +5,7 @@ import { and, eq, inArray, isNull, gt } from "drizzle-orm";
 import { getDb } from "@/db";
 import { article, auditLog, breakingAlert, homepageSlot } from "@/db/schema";
 import { requireStaff } from "@/lib/session";
+import { publicContentChanged } from "@/lib/cache";
 import { parseEATDateTime } from "@/lib/workflow";
 import { BREAKING_DURATIONS, TOP_SLOTS } from "@/lib/homepage";
 
@@ -72,6 +73,7 @@ export async function saveBoard(_prev: BoardState, formData: FormData): Promise<
       },
     }),
   ]);
+  publicContentChanged();
   refresh();
   return { message: "Homepage saved. Readers see it now." };
 }
@@ -111,6 +113,7 @@ export async function startBreaking(_prev: BoardState, formData: FormData): Prom
       details: { text, articleId, hours },
     }),
   ]);
+  publicContentChanged();
   refresh();
   return { message: `Breaking banner is live for ${hours} hour${hours === 1 ? "" : "s"}.` };
 }
@@ -132,6 +135,7 @@ export async function clearBreaking(): Promise<BoardState> {
       entityId: cleared[0].id,
     });
   }
+  publicContentChanged();
   refresh();
   return { message: "Breaking banner removed." };
 }

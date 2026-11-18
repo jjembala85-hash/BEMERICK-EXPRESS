@@ -5,6 +5,7 @@ import { eq, sql } from "drizzle-orm";
 import { getDb } from "@/db";
 import { articleTag, auditLog, tag } from "@/db/schema";
 import { requireStaff } from "@/lib/session";
+import { publicContentChanged } from "@/lib/cache";
 import { MAX_TAG_LENGTH } from "@/lib/tags";
 import { slugify } from "@/lib/slug";
 
@@ -40,6 +41,7 @@ export async function updateTag(_prev: TagState, formData: FormData): Promise<Ta
       details: row.name === name ? {} : { nameBefore: row.name, nameAfter: name },
     }),
   ]);
+  publicContentChanged();
   refresh();
   return { message: `Saved “${name}”.` };
 }
@@ -73,6 +75,7 @@ export async function mergeTag(_prev: TagState, formData: FormData): Promise<Tag
       details: { merged: from.name, mergedSlug: from.slug, into: into.name },
     }),
   ]);
+  publicContentChanged();
   refresh();
   return { message: `Merged “${from.name}” into “${into.name}”. Its old topic page now shows “Page not found”.` };
 }
@@ -93,6 +96,7 @@ export async function deleteTag(_prev: TagState, formData: FormData): Promise<Ta
       details: { name: row.name, slug: row.slug },
     }),
   ]);
+  publicContentChanged();
   refresh();
   return { message: `Deleted “${row.name}”.` };
 }

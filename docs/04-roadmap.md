@@ -81,7 +81,7 @@ gantt
 | 2.3 | Publish / unpublish (admin) | ✅ 15 Nov |
 | 2.4 | Article page (byline, times, photo + credit, body, related) | ✅ 16 Nov (photo + caption + credit, also on homepage, section lists and link previews; "More from <section>" related stories) |
 | 2.5 | Homepage (latest-based) + section pages | ✅ 15 Nov |
-| 2.6 | Caching + on-publish revalidation | ⬜ Pages read the database on every visit for now; needs the R2 cache |
+| 2.6 | Caching + on-publish revalidation | ✅ 18 Nov: Vercel Runtime Cache, cleared on every newsroom change (D-039) |
 | 2.7 | Favicon, manifest, page titles `Headline · BEMERICK EXPRESS` | ✅ 16 Nov (web app manifest, home-screen and Apple icons) |
 
 ### 🏁 Milestone 1 · First story live: ✅ reached 16 Nov 2026
@@ -120,7 +120,7 @@ Review states and transitions (Architecture §6) · review queue · editorial no
 
 | Done | In progress / next |
 |------|--------------------|
-| ✅ 18 Nov: SEO groundwork: sitemaps, Google News sitemap, RSS, structured data, indexing launch switch (D-037); About, Contact, news tip, Advertise, Latest, Search, draft policies and the newsroom Inbox (D-038) | Performance and accessibility audit · security and ops · owner tasks (content, lawyer, domain, Search Console) |
+| ✅ 18 Nov: SEO groundwork: sitemaps, Google News sitemap, RSS, structured data, indexing launch switch (D-037); About, Contact, news tip, Advertise, Latest, Search, draft policies and the newsroom Inbox (D-038); Lighthouse audit, layout-shift fix and caching (D-039) | Security and ops · owner tasks (content, lawyer, domain, Search Console) |
 
 ### 🚀 Milestone 2 · Public launch
 Announce on WhatsApp Channel, TikTok and X.

@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { auditLog, media, staffProfile } from "@/db/schema";
 import { requireStaff } from "@/lib/session";
+import { publicContentChanged } from "@/lib/cache";
 import { can } from "@/lib/permissions";
 import { parseXHandle } from "@/lib/profile";
 
@@ -64,6 +65,7 @@ export async function saveProfile(_prev: ProfileState, formData: FormData): Prom
       details: before.isPublic === isPublic ? {} : { authorPage: isPublic ? "on" : "off" },
     }),
   ]);
+  publicContentChanged();
   refresh();
   return {
     message: isPublic

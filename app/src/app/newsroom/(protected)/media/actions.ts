@@ -6,6 +6,7 @@ import { eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { auditLog, media } from "@/db/schema";
 import { requireStaff } from "@/lib/session";
+import { publicContentChanged } from "@/lib/cache";
 import { can } from "@/lib/permissions";
 import { allKeys, deleteMediaFiles } from "@/lib/media";
 import { isPhotoInUse } from "@/lib/queries/media";
@@ -59,6 +60,7 @@ export async function updatePhoto(_prev: PhotoState, formData: FormData): Promis
       details: credit === row.credit ? {} : { creditBefore: row.credit, creditAfter: credit },
     }),
   ]);
+  publicContentChanged();
   refresh();
   return { message: "Photo details saved. Stories using this photo show the new details." };
 }
@@ -91,5 +93,6 @@ export async function deletePhoto(_prev: PhotoState, formData: FormData): Promis
   }
   // The record is gone; clearing the files is best effort (a leftover file costs almost nothing).
   await deleteMediaFiles(allKeys(row)).catch((error) => console.error("Could not remove photo files", error));
+  publicContentChanged();
   redirect("/newsroom/media?deleted=1");
 }
