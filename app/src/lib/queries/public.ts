@@ -340,3 +340,49 @@ export async function getLiveState() {
 }
 
 export type LiveStreamView = NonNullable<Awaited<ReturnType<typeof getLiveState>>["onAir"]>;
+
+/**
+ * Stories for sitemaps and RSS: newest first, readers-visible only.
+ * `since` limits to recent stories (Google News sitemap: last 48 hours).
+ */
+export async function getFeedStories(options: { limit?: number; since?: Date; sectionSlug?: string } = {}) {
+  const { limit = 50, since, sectionSlug } = options;
+  await connection();
+  const rows = await getDb()
+    .select({
+      ...cardFields,
+      firstPublishedAt: article.firstPublishedAt,
+      updatedPublicAt: article.updatedPublicAt,
+      youtubeVideoId: article.youtubeVideoId,
+    })
+    .from(article)
+    .innerJoin(articleTranslation, and(eq(articleTranslation.articleId, article.id), eq(articleTranslation.lang, "en")))
+    .innerJoin(section, eq(section.id, article.primarySectionId))
+    .leftJoin(media, eq(media.id, article.leadMediaId))
+    .where(
+      and(
+        isPublic(),
+        since ? gt(article.publishedAt, since) : undefined,
+        sectionSlug ? eq(section.slug, sectionSlug) : undefined,
+      ),
+    )
+    .orderBy(desc(article.publishedAt), desc(article.id))
+    .limit(limit);
+  return rows.map((row) => ({ ...row, photo: toPhoto(row.photo) }));
+}
+
+/** Public author pages and topics that have published stories, for the sitemap. */
+export async function getSitemapExtras() {
+  await connection();
+  const db = getDb();
+  const [authors, topics] = await Promise.all([
+    db.select({ slug: staffProfile.slug, updatedAt: staffProfile.updatedAt }).from(staffProfile).where(eq(staffProfile.isPublic, true)),
+    db
+      .selectDistinct({ slug: tag.slug })
+      .from(tag)
+      .innerJoin(articleTag, eq(articleTag.tagId, tag.id))
+      .innerJoin(article, eq(article.id, articleTag.articleId))
+      .where(isPublic()),
+  ]);
+  return { authors, topics };
+}

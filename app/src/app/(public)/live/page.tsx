@@ -5,6 +5,8 @@ import { getLatestStories, getLiveState, type LiveStreamView } from "@/lib/queri
 import { formatEAT } from "@/lib/dates";
 import { YouTubePlayer } from "@/components/youtube-player";
 import { BulletinGrid } from "@/components/bulletin-grid";
+import { JsonLd } from "@/components/json-ld";
+import { liveBroadcast } from "@/lib/structured-data";
 
 export const metadata: Metadata = {
   title: "Live",
@@ -41,6 +43,7 @@ async function Live() {
     <>
       {onAir ? (
         <article>
+          <JsonLd data={liveBroadcast({ title: onAir.title, summary: onAir.summary, started: onAir.startedAt, videoId: onAir.youtubeVideoId })} />
           <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-[#c8401f]">
             <span className="size-2 animate-pulse rounded-full bg-[#c8401f] motion-reduce:animate-none" aria-hidden />
             Live now

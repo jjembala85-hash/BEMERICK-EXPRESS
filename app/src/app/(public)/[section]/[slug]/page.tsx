@@ -11,6 +11,8 @@ import { YouTubePlayer } from "@/components/youtube-player";
 import { shareImagePath } from "@/lib/share";
 import { siteUrl } from "@/lib/site";
 import { ReaderShare } from "@/components/reader-share";
+import { JsonLd } from "@/components/json-ld";
+import { breadcrumbs, newsArticle } from "@/lib/structured-data";
 
 type Props = PageProps<"/[section]/[slug]">;
 
@@ -50,9 +52,34 @@ async function Story({ params }: { params: Props["params"] }) {
   if (!story) notFound();
 
   const path = `/${story.sectionSlug}/${story.slug}`;
+  const structured = [
+    newsArticle({
+      path,
+      headline: story.headline,
+      description: story.standfirst,
+      section: story.sectionName,
+      sectionPath: `/${story.sectionSlug}`,
+      published: story.firstPublishedAt ?? story.publishedAt,
+      modified: story.updatedPublicAt,
+      // Google wants several aspect ratios; the share images give 16:9 and 1:1.
+      images: [
+        shareImagePath(story.sectionSlug, story.slug, "link", story.updatedPublicAt ?? story.publishedAt),
+        shareImagePath(story.sectionSlug, story.slug, "square", story.updatedPublicAt ?? story.publishedAt),
+        ...(story.photo ? [story.photo.src] : []),
+      ],
+      authors: story.authors.map((a) => ({ name: a.name, path: a.hasPage ? `/author/${a.slug}` : null })),
+      video: story.youtubeVideoId ? { id: story.youtubeVideoId } : null,
+    }),
+    breadcrumbs([
+      { name: "Home", path: "/" },
+      { name: story.sectionName, path: `/${story.sectionSlug}` },
+      { name: story.headline, path },
+    ]),
+  ];
 
   return (
     <article>
+      <JsonLd data={structured} />
       <nav aria-label="Breadcrumb" className="mb-4 text-sm text-slate">
         <Link href="/" className="hover:underline">Home</Link>
         <span aria-hidden> › </span>

@@ -118,6 +118,10 @@ Review states and transitions (Architecture §6) · review queue · editorial no
 | Ops | Nightly backup + **tested restore**, Sentry, uptime monitor, incident contact list |
 | Domain | Custom domain live, `www` redirect, email routing (`news@`, `tips@`, `ads@`) |
 
+| Done | In progress / next |
+|------|--------------------|
+| ✅ 18 Nov: SEO groundwork: sitemaps, Google News sitemap, RSS, structured data, indexing launch switch (D-037) | Site pages and policies · performance and accessibility audit · security and ops |
+
 ### 🚀 Milestone 2 · Public launch
 Announce on WhatsApp Channel, TikTok and X.
 

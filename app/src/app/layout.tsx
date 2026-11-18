@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Newsreader, Instrument_Sans } from "next/font/google";
 import "./globals.css";
-import { siteUrl } from "@/lib/site";
+import { indexingEnabled, siteUrl } from "@/lib/site";
 
 // Brand fonts (docs/01-brand-identity.md §3), self-hosted at build time.
 const newsreader = Newsreader({
@@ -27,8 +27,12 @@ export const metadata: Metadata = {
   description:
     "BEMERICK EXPRESS (BX News): fast, verified, mobile-first news from Uganda.",
   applicationName: "BX News",
-  // Pre-launch: keep search engines out until Phase 5 (launch readiness).
-  robots: { index: false, follow: false },
+  // Pre-launch the site stays out of search engines; the launch switch is
+  // NEXT_PUBLIC_SITE_INDEXING=on (lib/site.ts).
+  robots: indexingEnabled()
+    ? { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large" } }
+    : { index: false, follow: false },
+  alternates: { types: { "application/rss+xml": [{ url: "/rss.xml", title: "BX News: latest stories" }] } },
 };
 
 export const viewport: Viewport = {

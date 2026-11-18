@@ -25,3 +25,15 @@ export const followLinks: { name: string; href?: string }[] = [
   { name: "YouTube" },
   { name: "Facebook" },
 ];
+
+/**
+ * Launch switch for search engines. Off until launch (Phase 5): every page says
+ * noindex and robots.txt blocks crawlers. Set NEXT_PUBLIC_SITE_INDEXING=on in
+ * Vercel's Production settings on launch day.
+ */
+export function indexingEnabled() {
+  return process.env.NEXT_PUBLIC_SITE_INDEXING === "on";
+}
+
+export const SITE_NAME = "BEMERICK EXPRESS";
+export const PUBLISHER_NAME = "BX News";

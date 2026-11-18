@@ -4,12 +4,15 @@ import { getHomepage, type StoryCard } from "@/lib/queries/public";
 import { Kicker, StoryList } from "@/components/story-list";
 import { formatEAT } from "@/lib/dates";
 import { PhotoFrame } from "@/components/photo";
+import { JsonLd } from "@/components/json-ld";
+import { organization, website } from "@/lib/structured-data";
 
 // Lead and Top Stories come from the editors' homepage board; empty or expired
 // places fall back to the newest stories (lib/homepage.ts).
 export default function Home() {
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:py-10">
+      <JsonLd data={[organization(), website()]} />
       <Suspense fallback={<p className="text-slate">Loading the latest stories…</p>}>
         <FrontPage />
       </Suspense>
