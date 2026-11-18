@@ -140,7 +140,8 @@ export function SiteChrome({
 
         <div className="flex min-w-0 flex-1 flex-col">
           {banner}
-          <main className="flex-1">{children}</main>
+          {/* At least a screen tall, so the footer never starts in view and jumps when streamed content arrives (CLS budget < 0.1). */}
+          <main className="min-h-dvh flex-1">{children}</main>
           {footer}
         </div>
       </div>
