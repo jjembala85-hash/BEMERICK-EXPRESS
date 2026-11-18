@@ -120,7 +120,7 @@ Review states and transitions (Architecture §6) · review queue · editorial no
 
 | Done | In progress / next |
 |------|--------------------|
-| ✅ 18 Nov: SEO groundwork: sitemaps, Google News sitemap, RSS, structured data, indexing launch switch (D-037) | Site pages and policies · performance and accessibility audit · security and ops |
+| ✅ 18 Nov: SEO groundwork: sitemaps, Google News sitemap, RSS, structured data, indexing launch switch (D-037); About, Contact, news tip, Advertise, Latest, Search, draft policies and the newsroom Inbox (D-038) | Performance and accessibility audit · security and ops · owner tasks (content, lawyer, domain, Search Console) |
 
 ### 🚀 Milestone 2 · Public launch
 Announce on WhatsApp Channel, TikTok and X.

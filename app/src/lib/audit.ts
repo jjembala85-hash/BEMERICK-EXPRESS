@@ -34,6 +34,7 @@ const labels: Record<string, string> = {
   "tag.update": "edited a tag",
   "tag.merge": "merged two tags",
   "tag.delete": "deleted a tag",
+  "inbox.delete": "deleted a reader message",
   "staff.invite": "added a staff member",
   "staff.new_link": "made a new sign-in link",
   "staff.set_password": "set their password from an invite link",
@@ -64,6 +65,7 @@ export const AUDIT_AREAS = {
   homepage: { label: "Homepage, breaking & live", prefixes: ["homepage.", "breaking.", "live."] },
   photos: { label: "Photos", prefixes: ["media."] },
   tags: { label: "Tags", prefixes: ["tag."] },
+  inbox: { label: "Inbox", prefixes: ["inbox."] },
   people: { label: "Staff & profiles", prefixes: ["staff.", "profile.", "setup.", "security."] },
 } as const;
 

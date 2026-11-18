@@ -313,6 +313,41 @@ export const liveStream = pgTable(
   (t) => [index("live_stream_status_idx").on(t.status)],
 );
 
+export const messageKind = pgEnum("message_kind", ["contact", "tip", "advertise"]);
+export const messageStatus = pgEnum("message_status", ["new", "read", "archived"]);
+
+/**
+ * Messages from readers (contact, news tips, advertising enquiries). Only the
+ * minimum is kept (Blueprint §11.1): name and reply address are optional, and
+ * no IP address or device data is stored with the message.
+ */
+export const readerMessage = pgTable(
+  "reader_message",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    kind: messageKind("kind").notNull(),
+    status: messageStatus("status").notNull().default("new"),
+    name: text("name"),
+    replyTo: text("reply_to"),
+    subject: text("subject"),
+    body: text("body").notNull(),
+    handledBy: text("handled_by").references(() => user.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("reader_message_kind_status_idx").on(t.kind, t.status, t.createdAt)],
+);
+
+/** Rate limiting for the reader forms: a salted hash of the sender, kept for a day at most. */
+export const formThrottle = pgTable(
+  "form_throttle",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    keyHash: text("key_hash").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("form_throttle_key_idx").on(t.keyHash, t.createdAt)],
+);
+
 /** Append-only security trail. */
 export const auditLog = pgTable(
   "audit_log",

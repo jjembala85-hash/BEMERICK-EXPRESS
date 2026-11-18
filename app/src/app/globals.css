@@ -60,3 +60,14 @@ body {
 .bx-editor blockquote { border-left: 4px solid var(--bx-crane-gold); padding-left: 1.25rem; font-style: italic; margin: 1.2em 0; }
 .bx-editor a { color: var(--bx-lake-ink); text-decoration: underline; }
 .bx-editor hr { border-color: var(--bx-mist); margin: 1.5em 0; }
+
+/* About, Contact and policy pages (components/info-page.tsx) */
+.prose-bx { line-height: 1.7; }
+.prose-bx > * + * { margin-top: 1em; }
+.prose-bx h2 { font-family: var(--font-newsreader), Georgia, serif; font-size: 1.5rem; font-weight: 700; line-height: 1.3; margin-top: 1.8em; }
+.prose-bx h3 { font-weight: 700; margin-top: 1.4em; }
+.prose-bx ul { list-style: disc; padding-left: 1.5rem; }
+.prose-bx ol { list-style: decimal; padding-left: 1.5rem; }
+.prose-bx li + li { margin-top: 0.35em; }
+.prose-bx a { color: var(--bx-lake-ink); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+.prose-bx strong { font-weight: 700; }

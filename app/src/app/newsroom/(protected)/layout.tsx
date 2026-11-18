@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { count, eq } from "drizzle-orm";
 import { getDb } from "@/db";
-import { article } from "@/db/schema";
+import { article, readerMessage } from "@/db/schema";
 import { requireStaff } from "@/lib/session";
 import { can, roleLabels } from "@/lib/permissions";
 import { publishDueStories } from "@/lib/scheduling";
@@ -27,6 +27,9 @@ async function NewsroomShell({ children }: { children: React.ReactNode }) {
   const reviewer = can(staff.role, "article.review");
   // Tidy scheduled stories whose time has passed (readers already see them).
   await publishDueStories();
+  const newMessages = can(staff.role, "inbox.read")
+    ? ((await getDb().select({ n: count() }).from(readerMessage).where(eq(readerMessage.status, "new")))[0]?.n ?? 0)
+    : 0;
   const waiting = reviewer
     ? ((await getDb().select({ n: count() }).from(article).where(eq(article.status, "in_review")))[0]?.n ?? 0)
     : 0;
@@ -36,6 +39,7 @@ async function NewsroomShell({ children }: { children: React.ReactNode }) {
     { href: "/newsroom/stories", label: "Stories", show: true },
     { href: "/newsroom/review", label: "Review", show: reviewer, badge: waiting },
     { href: "/newsroom/media", label: "Photos", show: can(staff.role, "media.upload") },
+    { href: "/newsroom/inbox", label: "Inbox", show: can(staff.role, "inbox.read"), badge: newMessages },
     { href: "/newsroom/tags", label: "Tags", show: can(staff.role, "tags.manage") },
     { href: "/newsroom/homepage", label: "Homepage", show: can(staff.role, "homepage.manage") },
     { href: "/newsroom/live", label: "Live", show: can(staff.role, "homepage.manage") },

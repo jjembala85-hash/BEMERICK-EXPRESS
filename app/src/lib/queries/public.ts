@@ -1,6 +1,6 @@
 // The ONLY place public pages read stories from. Every query goes through
 // isPublic(), so drafts and unpublished stories can never leak to readers.
-import { and, asc, desc, eq, gt, inArray, isNull, lte } from "drizzle-orm";
+import { and, asc, desc, eq, gt, inArray, isNull, lte, sql } from "drizzle-orm";
 import { connection } from "next/server";
 import { getDb } from "@/db";
 import {
@@ -385,4 +385,28 @@ export async function getSitemapExtras() {
       .where(isPublic()),
   ]);
   return { authors, topics };
+}
+
+/**
+ * Full-text search over headlines and standfirsts (PostgreSQL, English stemming,
+ * so "price" finds "prices"). Best matches first, then newest.
+ */
+export async function searchStories(query: string, options: { limit?: number; offset?: number } = {}) {
+  const { limit = 20, offset = 0 } = options;
+  const q = query.trim().slice(0, 120);
+  if (q.length < 2) return [];
+  await connection();
+  const doc = sql`to_tsvector('english', ${articleTranslation.headline} || ' ' || coalesce(${articleTranslation.standfirst}, ''))`;
+  const tsq = sql`websearch_to_tsquery('english', ${q})`;
+  const rows = await getDb()
+    .select(cardFields)
+    .from(article)
+    .innerJoin(articleTranslation, and(eq(articleTranslation.articleId, article.id), eq(articleTranslation.lang, "en")))
+    .innerJoin(section, eq(section.id, article.primarySectionId))
+    .leftJoin(media, eq(media.id, article.leadMediaId))
+    .where(and(isPublic(), sql`${doc} @@ ${tsq}`))
+    .orderBy(sql`ts_rank(${doc}, ${tsq}) desc`, desc(article.publishedAt))
+    .limit(limit)
+    .offset(offset);
+  return rows.map((row) => ({ ...row, photo: toPhoto(row.photo) }));
 }
