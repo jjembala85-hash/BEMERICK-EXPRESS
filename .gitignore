@@ -28,3 +28,6 @@ npm-debug.log*
 
 .vercel
 .env*
+
+# Local-only secrets (passwords, keys): never committed
+*.local.txt

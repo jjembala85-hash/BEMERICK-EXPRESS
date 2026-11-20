@@ -1,0 +1,94 @@
+# Nightly database backup (Phase 5 ops, D-041).
+# 1. Dump the live database.  2. Prove the dump restores (scratch PostgreSQL).
+# 3. Encrypt it.  4. Store it in the private R2 bucket "bemerick-express-backups".
+# A failed run emails the repository owner. Restore guide: ops/backup/README.md
+name: Database backup
+
+on:
+  schedule:
+    - cron: "30 0 * * *" # 03:30 East Africa Time, every night
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: database-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      # Empty, throwaway database used only to prove each backup restores.
+      scratch:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: scratch
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      LIVE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check settings
+        run: |
+          if [ -z "$LIVE_URL" ]; then echo "::error::Secret BACKUP_DATABASE_URL is missing"; exit 1; fi
+
+      - name: Install PostgreSQL 18 tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-common > /dev/null
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y > /dev/null
+          sudo apt-get install -y -qq postgresql-client-18 > /dev/null
+          echo /usr/lib/postgresql/18/bin >> "$GITHUB_PATH"
+
+      - name: Dump the live database
+        run: |
+          for attempt in 1 2 3; do
+            pg_dump --format=custom --no-owner --no-privileges "$LIVE_URL" -f db.dump && break
+            echo "Attempt $attempt failed, retrying in 30 s"; sleep 30
+          done
+          test -s db.dump
+          echo "Backup size: $(du -h db.dump | cut -f1)"
+
+      - name: Prove the backup restores
+        env:
+          RESTORE_URL: postgresql://postgres:scratch@localhost:5432/postgres
+        run: bash ops/backup/verify-restore.sh db.dump
+
+      - name: Encrypt
+        env:
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          if [ -z "$BACKUP_PASSPHRASE" ]; then echo "::error::Secret BACKUP_PASSPHRASE is missing"; exit 1; fi
+          printf '%s' "$BACKUP_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 \
+            --symmetric --cipher-algo AES256 -o db.dump.gpg db.dump
+          rm -f db.dump
+
+      - name: Store in R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_BACKUP_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_BACKUP_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+        run: |
+          if [ -z "$AWS_ACCESS_KEY_ID" ] || [ -z "$AWS_SECRET_ACCESS_KEY" ] || [ -z "$R2_ACCOUNT_ID" ]; then
+            echo "::error::R2 backup key secrets are missing: the backup was checked but NOT stored"; exit 1
+          fi
+          endpoint="https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+          day=$(date -u +%F)
+          # daily/ is kept 35 days, monthly/ 400 days (bucket lifecycle rules).
+          aws s3 cp db.dump.gpg "s3://bemerick-express-backups/daily/${day}.dump.gpg" --endpoint-url "$endpoint" --only-show-errors
+          if [ "$(date -u +%d)" = "01" ]; then
+            aws s3 cp db.dump.gpg "s3://bemerick-express-backups/monthly/${day}.dump.gpg" --endpoint-url "$endpoint" --only-show-errors
+          fi
+          echo "Stored daily/${day}.dump.gpg"
+
+      - name: Remove local copies
+        if: always()
+        run: rm -f db.dump db.dump.gpg
