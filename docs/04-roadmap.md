@@ -51,7 +51,7 @@ gantt
 | 0.2 | Push this document repo to GitHub | ✅ 15 Nov |
 | 0.3 | Check domain availability; buy `bemerickexpress.com` (Cloudflare Registrar) | ⬜ Postponed (D-021) |
 | 0.4 | Reserve `bxnews` handles: WhatsApp Channel, TikTok, X, YouTube, Facebook, Instagram | 🟦 WhatsApp Channel created 15 Nov and linked in the footer; others pending |
-| 0.5 | Create free accounts: Cloudflare, Neon, Resend, Sentry | 🟦 Cloudflare and Neon connected 15 Nov; Resend and Sentry later |
+| 0.5 | Create free accounts: Cloudflare, Neon, Resend, Sentry | 🟦 Cloudflare and Neon connected 15 Nov; Sentry 20 Nov; Resend later |
 | 0.6 | Create Next.js app in `app/` with OpenNext Cloudflare | ✅ 15 Nov (Next.js 16.4; builds for Workers; brand colours and fonts applied) |
 | 0.7 | **Spike:** deploy skeleton (home + article from Neon + login) to Workers free plan; record results | ✅ 15 Nov: live at `bemerick-express.bemerick-express.workers.dev`. Bundle 1.88 MB compressed (limit 3 MB); dashboard reads from Neon `main`; real sign-ins succeed, no CPU-limit errors |
 | 0.8 | Record hosting decision (D-008) in Decisions Log | ✅ 15 Nov (D-024) |
@@ -120,7 +120,7 @@ Review states and transitions (Architecture §6) · review queue · editorial no
 
 | Done | In progress / next |
 |------|--------------------|
-| ✅ 18 Nov: SEO groundwork: sitemaps, Google News sitemap, RSS, structured data, indexing launch switch (D-037); About, Contact, news tip, Advertise, Latest, Search, draft policies and the newsroom Inbox (D-038); Lighthouse audit, layout-shift fix and caching (D-039); functions moved to Frankfurt and photos served from Vercel's edge (D-040): story LCP 4.3–4.8 s → 3.0–3.6 s on Lighthouse's slow-4G phone test. ✅ 20 Nov: nightly encrypted backups with a restore check, error reporting ready for Sentry (D-041), sign-in hardening, secrets audit and role tests (D-042) | Owner tasks: R2 backup key, Sentry sign-up, domain, 30+ stories, lawyer review, Search Console |
+| ✅ 18 Nov: SEO groundwork: sitemaps, Google News sitemap, RSS, structured data, indexing launch switch (D-037); About, Contact, news tip, Advertise, Latest, Search, draft policies and the newsroom Inbox (D-038); Lighthouse audit, layout-shift fix and caching (D-039); functions moved to Frankfurt and photos served from Vercel's edge (D-040): story LCP 4.3–4.8 s → 3.0–3.6 s on Lighthouse's slow-4G phone test. ✅ 20 Nov: nightly encrypted backups with a restore check, error reporting to Sentry (D-041), sign-in hardening, secrets audit and role tests (D-042). ✅ 20 Nov: backups upload to R2 (first full run green), Sentry live in production with an uptime monitor | Owner tasks: domain, 30+ stories, lawyer review, Search Console |
 
 ### 🚀 Milestone 2 · Public launch
 Announce on WhatsApp Channel, TikTok and X.
