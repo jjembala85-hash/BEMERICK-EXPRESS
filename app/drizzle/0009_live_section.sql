@@ -1,0 +1,2 @@
+ALTER TABLE "live_stream" ADD COLUMN "section_id" uuid;--> statement-breakpoint
+ALTER TABLE "live_stream" ADD CONSTRAINT "live_stream_section_id_section_id_fk" FOREIGN KEY ("section_id") REFERENCES "public"."section"("id") ON DELETE set null ON UPDATE no action;

@@ -10,6 +10,7 @@
 import { and, asc, desc, eq, gt, inArray, isNull, lte, sql } from "drizzle-orm";
 import { connection } from "next/server";
 import { cacheLife, cacheTag } from "next/cache";
+import { alias } from "drizzle-orm/pg-core";
 import { getDb } from "@/db";
 import {
   article,
@@ -403,12 +404,15 @@ async function getTagCached(slug: string) {
 }
 
 /**
- * The stream on air now (if any) and the next scheduled one. A scheduled stream
- * whose start time passed more than 6 hours ago is treated as stale and skipped.
+ * Every stream on air now (newest first) and the next few scheduled ones (D-043).
+ * Several streams can be on air at once, each optionally tagged with a section.
+ * A scheduled stream whose start time passed more than 6 hours ago is stale and skipped.
  */
 export async function getLiveState() {
   return getLiveStateCached((await clock()).at);
 }
+
+const streamSection = alias(section, "stream_section");
 
 async function getLiveStateCached(at: number) {
   "use cache: remote";
@@ -423,6 +427,8 @@ async function getLiveStateCached(at: number) {
     startedAt: liveStream.startedAt,
     summary: liveStream.summary,
     keyPoints: liveStream.keyPoints,
+    sectionSlug: streamSection.slug,
+    sectionName: streamSection.name,
     relatedHeadline: articleTranslation.headline,
     relatedSlug: articleTranslation.slug,
     relatedSection: section.slug,
@@ -430,23 +436,24 @@ async function getLiveStateCached(at: number) {
   // The related story is linked only while readers can see it.
   const related = (q: ReturnType<ReturnType<typeof db.select<typeof fields>>["from"]>) =>
     q
+      .leftJoin(streamSection, eq(streamSection.id, liveStream.sectionId))
       .leftJoin(article, and(eq(article.id, liveStream.relatedArticleId), isPublic(at)))
       .leftJoin(articleTranslation, and(eq(articleTranslation.articleId, article.id), eq(articleTranslation.lang, "en")))
       .leftJoin(section, eq(section.id, article.primarySectionId));
-  const [[onAir], [next]] = await Promise.all([
+  const [onAir, upcoming] = await Promise.all([
     related(db.select(fields).from(liveStream))
       .where(eq(liveStream.status, "live"))
       .orderBy(desc(liveStream.startedAt))
-      .limit(1),
+      .limit(12),
     related(db.select(fields).from(liveStream))
       .where(and(eq(liveStream.status, "scheduled"), gt(liveStream.scheduledStart, new Date(at - 6 * 3600_000))))
       .orderBy(asc(liveStream.scheduledStart))
-      .limit(1),
+      .limit(5),
   ]);
-  return { onAir: onAir ?? null, next: next ?? null };
+  return { onAir, upcoming };
 }
 
-export type LiveStreamView = NonNullable<Awaited<ReturnType<typeof getLiveState>>["onAir"]>;
+export type LiveStreamView = Awaited<ReturnType<typeof getLiveState>>["onAir"][number];
 
 /**
  * Stories for sitemaps and RSS: newest first, readers-visible only.

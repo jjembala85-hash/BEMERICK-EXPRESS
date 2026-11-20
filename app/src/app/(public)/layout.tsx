@@ -32,15 +32,19 @@ async function Breaking() {
 
 async function LivePill() {
   const { onAir } = await getLiveState();
-  if (!onAir) return null;
+  if (onAir.length === 0) return null;
+  const label = onAir.length === 1 ? `Live now: ${onAir[0].title}` : `${onAir.length} streams live now`;
   return (
     <Link
       href="/live"
-      className="flex items-center gap-1.5 rounded bg-[#c8401f] px-2 py-1 text-xs font-bold tracking-wider text-white hover:opacity-90"
-      aria-label={`Live now: ${onAir.title}`}
+      className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded bg-[#c8401f] px-2 py-1 text-xs font-bold tracking-wider text-white hover:opacity-90"
+      aria-label={label}
     >
       <span className="size-2 animate-pulse rounded-full bg-white motion-reduce:animate-none" aria-hidden />
       LIVE
+      {onAir.length > 1 && (
+        <span aria-hidden className="rounded-sm bg-white px-1 text-[#c8401f]">{onAir.length}</span>
+      )}
     </Link>
   );
 }

@@ -303,6 +303,8 @@ export const liveStream = pgTable(
     summary: text("summary"),
     keyPoints: jsonb("key_points").$type<string[]>().notNull().default([]),
     relatedArticleId: uuid("related_article_id").references(() => article.id, { onDelete: "set null" }),
+    /** Optional section; its page shows the stream while on air (D-043). */
+    sectionId: uuid("section_id").references(() => section.id, { onDelete: "set null" }),
     startedAt: timestamp("started_at", { withTimezone: true }),
     endedAt: timestamp("ended_at", { withTimezone: true }),
     createdBy: text("created_by")

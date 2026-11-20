@@ -2,9 +2,9 @@
 
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
-import { and, eq, ne } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { getDb } from "@/db";
-import { article, auditLog, liveStream } from "@/db/schema";
+import { article, auditLog, liveStream, section } from "@/db/schema";
 import { requireStaff } from "@/lib/session";
 import { publicContentChanged } from "@/lib/cache";
 import { parseEATDateTime } from "@/lib/workflow";
@@ -22,6 +22,7 @@ type Fields = {
   scheduledStart: Date | null;
   keyPoints: string[];
   relatedArticleId: string | null;
+  sectionId: string | null;
 };
 
 /** Reads and checks the stream form. */
@@ -35,6 +36,7 @@ async function readFields(formData: FormData): Promise<Fields | { error: string 
     .map((l) => l.replace(/^\s*[-•*]\s*/, "").trim())
     .filter(Boolean);
   const relatedInput = String(formData.get("relatedArticleId") ?? "");
+  const sectionInput = String(formData.get("sectionId") ?? "");
 
   if (title.length < 3 || title.length > 120) return { error: "Give the stream a title (3 to 120 characters)." };
   const youtubeVideoId = parseYouTubeId(youtubeInput);
@@ -53,15 +55,15 @@ async function readFields(formData: FormData): Promise<Fields | { error: string 
     if (!row) return { error: "The related story could not be found." };
     relatedArticleId = row.id;
   }
-  return { title, youtubeVideoId, summary: summary || null, scheduledStart, keyPoints, relatedArticleId };
-}
-
-/** Only one stream is on air at a time: starting one ends any other. */
-function endOthers(db: ReturnType<typeof getDb>, keepId: string, now: Date) {
-  return db
-    .update(liveStream)
-    .set({ status: "ended", endedAt: now, updatedAt: now })
-    .where(and(eq(liveStream.status, "live"), ne(liveStream.id, keepId)));
+  let sectionId: string | null = null;
+  if (sectionInput) {
+    const [row] = UUID.test(sectionInput)
+      ? await getDb().select({ id: section.id }).from(section).where(eq(section.id, sectionInput)).limit(1)
+      : [];
+    if (!row) return { error: "That section could not be found." };
+    sectionId = row.id;
+  }
+  return { title, youtubeVideoId, summary: summary || null, scheduledStart, keyPoints, relatedArticleId, sectionId };
 }
 
 export async function createStream(_prev: LiveState, formData: FormData): Promise<LiveState> {
@@ -82,18 +84,17 @@ export async function createStream(_prev: LiveState, formData: FormData): Promis
       startedAt: goLive ? now : null,
       createdBy: staff.id,
     }),
-    ...(goLive ? [endOthers(db, id, now)] : []),
     db.insert(auditLog).values({
       actorId: staff.id,
       action: goLive ? "live.start" : "live.schedule",
       entity: "live_stream",
       entityId: id,
-      details: { title: fields.title },
+      details: { title: fields.title, ...(fields.sectionId ? { sectionId: fields.sectionId } : {}) },
     }),
   ]);
   publicContentChanged();
   refresh();
-  return { message: goLive ? "You are live. The LIVE pill now shows on every page." : "Stream scheduled. /live shows it as “Next live”." };
+  return { message: goLive ? "You are live. The LIVE pill now shows on every page, and the stream is on /live." : "Stream scheduled. /live shows it as “Next live”." };
 }
 
 export async function updateStream(_prev: LiveState, formData: FormData): Promise<LiveState> {
@@ -137,7 +138,6 @@ export async function setStreamStatus(_prev: LiveState, formData: FormData): Pro
   if (to === "live") {
     if (row.status === "live") return {};
     await db.batch([
-      endOthers(db, id, now),
       db.update(liveStream).set({ status: "live", startedAt: now, endedAt: null, updatedAt: now }).where(eq(liveStream.id, id)),
       log("live.start"),
     ]);
