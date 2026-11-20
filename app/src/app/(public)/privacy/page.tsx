@@ -29,7 +29,7 @@ export default function PrivacyPage() {
         <li>We delete messages when we no longer need them, and at the latest after 12 months.</li>
       </ul>
       <h2>Sharing</h2>
-      <p>We do not sell personal data. Our technical providers store data on our behalf: Vercel (website hosting), Neon (database, in the EU) and Cloudflare (photo storage). Links to WhatsApp, X and other services take you to those services, whose own policies apply.</p>
+      <p>We do not sell personal data. Our technical providers store data on our behalf: Vercel (website hosting), Neon (database, in the EU), Cloudflare (photo storage and encrypted backups) and Sentry (error reports, which contain the page address and the technical error, never your personal details). Links to WhatsApp, X and other services take you to those services, whose own policies apply.</p>
       <h2>Your rights</h2>
       <p>You can ask us what personal data we hold about you, ask us to correct it, or ask us to delete it. <Link href="/contact">Contact us</Link> and we will reply within 30 days. If you are not satisfied, you can complain to the Personal Data Protection Office of Uganda.</p>
       <h2>Changes</h2>
