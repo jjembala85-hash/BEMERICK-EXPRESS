@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { getRelatedStories, getStory } from "@/lib/queries/public";
+import { getRelatedStories, getRunningAds, getStory } from "@/lib/queries/public";
+import { AdBanner } from "@/components/ad-banner";
 import { Kicker, StoryList } from "@/components/story-list";
 import { RichText } from "@/lib/rich-text";
 import { formatEAT } from "@/lib/dates";
@@ -48,7 +49,7 @@ export default function StoryPage({ params }: Props) {
 
 async function Story({ params }: { params: Props["params"] }) {
   const { section, slug } = await params;
-  const story = await getStory(section, slug);
+  const [story, ads] = await Promise.all([getStory(section, slug), getRunningAds()]);
   if (!story) notFound();
 
   const path = `/${story.sectionSlug}/${story.slug}`;
@@ -167,6 +168,8 @@ async function Story({ params }: { params: Props["params"] }) {
       )}
 
       <ReaderShare url={`${siteUrl()}${path}`} headline={story.headline} />
+
+      <AdBanner running={ads} slot="story" className="mt-10" />
 
       <Suspense fallback={null}>
         <Related story={story} />

@@ -28,6 +28,13 @@ const labels: Record<string, string> = {
   "live.end": "ended a live stream",
   "live.update": "updated a live stream",
   "live.delete": "deleted a live stream",
+  "push.send": "sent a breaking-news alert",
+  "newsletter.send": "sent a newsletter edition",
+  "ad.create": "added an ad",
+  "ad.update": "edited an ad",
+  "ad.pause": "paused an ad",
+  "ad.resume": "resumed an ad",
+  "ad.delete": "deleted an ad",
   "media.upload": "uploaded a photo",
   "media.update": "changed a photo's details",
   "media.delete": "deleted a photo",
@@ -62,10 +69,12 @@ export function describeAction(action: string) {
 
 export const AUDIT_AREAS = {
   stories: { label: "Stories", prefixes: ["article."] },
-  homepage: { label: "Homepage, breaking & live", prefixes: ["homepage.", "breaking.", "live."] },
+  homepage: { label: "Homepage, breaking & live", prefixes: ["homepage.", "breaking.", "live.", "push."] },
   photos: { label: "Photos", prefixes: ["media."] },
   tags: { label: "Tags", prefixes: ["tag."] },
   inbox: { label: "Inbox", prefixes: ["inbox."] },
+  audience: { label: "Newsletter", prefixes: ["newsletter."] },
+  ads: { label: "Ads", prefixes: ["ad."] },
   people: { label: "Staff & profiles", prefixes: ["staff.", "profile.", "setup.", "security."] },
 } as const;
 
@@ -77,7 +86,7 @@ export function isAuditArea(value: unknown): value is AuditArea {
 
 /** Actions that deserve a second look (shown highlighted). */
 export function isSensitive(action: string) {
-  return /^(article\.(unpublish|fast_track_publish|legal_hold|legal_clear|spike|create_and_publish)|staff\.(change_role|deactivate|reactivate|invite|reset_two_factor)|security\.two_factor_off|media\.delete|tag\.(merge|delete)|setup\.)/.test(
+  return /^(article\.(unpublish|fast_track_publish|legal_hold|legal_clear|spike|create_and_publish)|staff\.(change_role|deactivate|reactivate|invite|reset_two_factor)|security\.two_factor_off|media\.delete|ad\.delete|tag\.(merge|delete)|setup\.)/.test(
     action,
   );
 }

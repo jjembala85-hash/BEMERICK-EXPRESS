@@ -1,7 +1,7 @@
 // Photo library queries (newsroom only).
 import { desc, eq, ilike, or, sql } from "drizzle-orm";
 import { getDb } from "@/db";
-import { article, articleRevision, media, staffProfile, user } from "@/db/schema";
+import { ad, article, articleRevision, media, staffProfile, user } from "@/db/schema";
 import { mediaUrl, smallestKey } from "@/lib/media";
 
 export const LIBRARY_PAGE_SIZE = 24;
@@ -67,12 +67,13 @@ export async function searchPhotos({ q = "", page = 1 }: { q?: string; page?: nu
 /** True when a story, a kept past version or a staff profile shows the photo, so it must not be deleted. */
 export async function isPhotoInUse(id: string) {
   const db = getDb();
-  const [[current], [past], [profile]] = await Promise.all([
+  const [[current], [past], [profile], [advert]] = await Promise.all([
     db.select({ id: article.id }).from(article).where(eq(article.leadMediaId, id)).limit(1),
     db.select({ id: articleRevision.id }).from(articleRevision).where(eq(articleRevision.leadMediaId, id)).limit(1),
     db.select({ id: staffProfile.userId }).from(staffProfile).where(eq(staffProfile.photoMediaId, id)).limit(1),
+    db.select({ id: ad.id }).from(ad).where(eq(ad.mediaId, id)).limit(1),
   ]);
-  return Boolean(current || past || profile);
+  return Boolean(current || past || profile || advert);
 }
 
 /** Staff whose profile photo this is. */

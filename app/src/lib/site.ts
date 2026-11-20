@@ -37,3 +37,13 @@ export function indexingEnabled() {
 
 export const SITE_NAME = "BEMERICK EXPRESS";
 export const PUBLISHER_NAME = "BX News";
+
+/**
+ * Switch for reader sign-ups: breaking-news alerts and the newsletter (D-044).
+ * Off until BX News is registered with Uganda's Personal Data Protection Office,
+ * because both collect personal data. Set NEXT_PUBLIC_READER_SIGNUPS=on in Vercel
+ * (and redeploy) to show the sign-up buttons and accept new subscribers.
+ */
+export function readerSignupsEnabled() {
+  return process.env.NEXT_PUBLIC_READER_SIGNUPS === "on";
+}

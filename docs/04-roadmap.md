@@ -129,6 +129,10 @@ Announce on WhatsApp Channel, TikTok and X.
 
 Consent banner → AdSense application · direct ad slots + `/advertise` rate card · newsletter (double opt-in, morning briefing) · web push for breaking (opt-in) · most-read widget · Data Protection Office registration before collecting subscriber data.
 
+| Done | Next |
+|------|------|
+| ✅ 20 Nov: several live streams by section (D-043); direct ads managed by admins with daily view/click reports, banner positions on `/advertise`; breaking-news alerts (Web Push) sent from the breaking banner; newsletter with double opt-in, editions and one-click unsubscribe (D-044). Sign-ups built but switched off | Owner: Data Protection Office registration → then `NEXT_PUBLIC_READER_SIGNUPS=on`; domain + Resend key for newsletter sending; Vercel Pro before paid ads. Code: most-read widget; consent banner + AdSense after launch |
+
 ## Phase 7 · Languages (week 15+)
 
 Translation workflow in newsroom → `/lg` routes → Luganda launch with human-reviewed translations → Swahili.

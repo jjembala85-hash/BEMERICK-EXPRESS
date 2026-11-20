@@ -1,11 +1,27 @@
 import Link from "next/link";
 import { sections, watchLinks, aboutLinks, policyLinks } from "@/lib/sections";
-import { followLinks } from "@/lib/site";
+import { followLinks, readerSignupsEnabled } from "@/lib/site";
+import { NewsletterForm } from "./newsletter-form";
+import { AlertsButton } from "./alerts-button";
 
 
 export function SiteFooter() {
   return (
     <footer className="mt-auto bg-brand-deep text-[#e4ecea]">
+      {readerSignupsEnabled() && (
+        <div className="border-b border-white/10">
+          <div className="mx-auto grid max-w-6xl gap-6 px-4 py-8 md:grid-cols-2">
+            <div>
+              <p className="mb-2 font-serif text-xl font-bold text-white">The morning briefing</p>
+              <NewsletterForm compact />
+            </div>
+            <div>
+              <p className="mb-2 font-serif text-xl font-bold text-white">Breaking-news alerts</p>
+              <AlertsButton />
+            </div>
+          </div>
+        </div>
+      )}
       <div className="mx-auto grid max-w-6xl grid-cols-2 gap-8 px-4 py-10 md:grid-cols-4">
         <FooterColumn title="Sections">
           {sections.map((s) => (

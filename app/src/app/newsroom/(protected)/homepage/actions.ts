@@ -1,9 +1,11 @@
 "use server";
 
 import { refresh } from "next/cache";
+import { after } from "next/server";
 import { and, eq, inArray, isNull, gt } from "drizzle-orm";
 import { getDb } from "@/db";
-import { article, auditLog, breakingAlert, homepageSlot } from "@/db/schema";
+import { article, articleTranslation, auditLog, breakingAlert, homepageSlot, section } from "@/db/schema";
+import { pushConfigured, sendAlertToAll } from "@/lib/push";
 import { requireStaff } from "@/lib/session";
 import { publicContentChanged } from "@/lib/cache";
 import { parseEATDateTime } from "@/lib/workflow";
@@ -89,14 +91,23 @@ export async function startBreaking(_prev: BoardState, formData: FormData): Prom
   if (text.length > 140) return { error: "Keep the breaking headline under 140 characters." };
   if (!(BREAKING_DURATIONS as readonly number[]).includes(hours)) return { error: "Choose how long to show it." };
   let articleId: string | null = null;
+  let path = "/";
   const db = getDb();
   if (articleInput) {
     const [story] = UUID.test(articleInput)
-      ? await db.select({ id: article.id }).from(article).where(and(eq(article.id, articleInput), eq(article.status, "published"))).limit(1)
+      ? await db
+          .select({ id: article.id, slug: articleTranslation.slug, sectionSlug: section.slug })
+          .from(article)
+          .innerJoin(articleTranslation, and(eq(articleTranslation.articleId, article.id), eq(articleTranslation.lang, "en")))
+          .innerJoin(section, eq(section.id, article.primarySectionId))
+          .where(and(eq(article.id, articleInput), eq(article.status, "published")))
+          .limit(1)
       : [];
     if (!story) return { error: "The linked story must be published." };
     articleId = story.id;
+    path = `/${story.sectionSlug}/${story.slug}`;
   }
+  const sendAlert = formData.get("sendAlert") === "on" && pushConfigured();
 
   const now = new Date();
   const expiresAt = new Date(now.getTime() + hours * 3600_000);
@@ -114,8 +125,19 @@ export async function startBreaking(_prev: BoardState, formData: FormData): Prom
     }),
   ]);
   publicContentChanged();
+  if (sendAlert) {
+    // Sent after the reply, so the editor is not kept waiting; the result goes to History.
+    after(async () => {
+      const result = await sendAlertToAll({ title: "Breaking · BX News", body: text, path });
+      await getDb()
+        .insert(auditLog)
+        .values({ actorId: staff.id, action: "push.send", entity: "breaking_alert", details: { text, ...result } });
+    });
+  }
   refresh();
-  return { message: `Breaking banner is live for ${hours} hour${hours === 1 ? "" : "s"}.` };
+  return {
+    message: `Breaking banner is live for ${hours} hour${hours === 1 ? "" : "s"}.${sendAlert ? " The alert is being sent; History shows how many it reached." : ""}`,
+  };
 }
 
 export async function clearBreaking(): Promise<BoardState> {

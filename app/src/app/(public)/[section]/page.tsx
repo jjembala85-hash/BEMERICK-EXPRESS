@@ -4,7 +4,8 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { sections, getSection } from "@/lib/sections";
 import Link from "next/link";
-import { getLatestStories, getLiveState } from "@/lib/queries/public";
+import { getLatestStories, getLiveState, getRunningAds } from "@/lib/queries/public";
+import { AdBanner } from "@/components/ad-banner";
 import { StoryList } from "@/components/story-list";
 
 export function generateStaticParams() {
@@ -42,11 +43,16 @@ export default async function SectionPage({ params }: PageProps<"/[section]">) {
 
 async function SectionStories({ slug, name }: { slug: string; name: string }) {
   await connection();
-  const stories = await getLatestStories({ sectionSlug: slug, limit: 30 });
+  const [stories, ads] = await Promise.all([getLatestStories({ sectionSlug: slug, limit: 30 }), getRunningAds()]);
   if (stories.length === 0) {
     return <p className="mt-8 text-slate">Stories in {name} will appear here.</p>;
   }
-  return <StoryList stories={stories} showSection={false} />;
+  return (
+    <>
+      <AdBanner running={ads} slot="section" className="mt-6" />
+      <StoryList stories={stories} showSection={false} />
+    </>
+  );
 }
 
 /** Streams on air that the newsroom tagged with this section (D-043). */

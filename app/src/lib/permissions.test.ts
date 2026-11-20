@@ -18,6 +18,8 @@ const allPermissions: Permission[] = [
   "sections.manage",
   "tags.manage",
   "inbox.read",
+  "ads.manage",
+  "audience.manage",
   "corrections.manage",
   "legal.clear",
   "staff.manage",
@@ -52,4 +54,11 @@ test("editor runs the newsroom but cannot manage staff, settings or skip review"
 test("isRole accepts only the three staff roles", () => {
   for (const r of ROLES) assert.ok(isRole(r));
   for (const bad of ["user", "Admin", "", null, undefined, 1, "admin "]) assert.equal(isRole(bad), false, String(bad));
+});
+
+test("ads are admin-only; newsletter and alerts are editors' and admins'", () => {
+  assert.equal(can("editor", "ads.manage"), false);
+  assert.equal(can("writer", "ads.manage"), false);
+  assert.ok(can("editor", "audience.manage"));
+  assert.equal(can("writer", "audience.manage"), false);
 });

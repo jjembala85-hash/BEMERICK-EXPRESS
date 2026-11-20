@@ -7,12 +7,13 @@
 // the database about once a minute per region instead of on every view, scheduled
 // stories still appear on time (the minute is part of the cache key), and every
 // newsroom change clears the cache at once (publicContentChanged in lib/cache.ts).
-import { and, asc, desc, eq, gt, inArray, isNull, lte, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, inArray, isNull, lte, or, sql } from "drizzle-orm";
 import { connection } from "next/server";
 import { cacheLife, cacheTag } from "next/cache";
 import { alias } from "drizzle-orm/pg-core";
 import { getDb } from "@/db";
 import {
+  ad,
   article,
   articleAuthor,
   articleCorrection,
@@ -29,6 +30,7 @@ import {
 import { toPhoto } from "@/lib/media";
 import { assembleHomepage } from "@/lib/homepage";
 import { PUBLIC_CONTENT_TAG } from "@/lib/cache-tags";
+import type { AdSlot } from "@/lib/ads";
 
 // A scheduled story counts as live once its go-live time (publishedAt) has passed,
 // so scheduling works without a cron job (D-027).
@@ -538,3 +540,47 @@ export async function searchStories(query: string, options: { limit?: number; of
     .offset(offset);
   return liveBy(rows.map((row) => ({ ...row, photo: toPhoto(row.photo) })), now);
 }
+
+/**
+ * Direct-sold banners running now (D-044), and `turn`, which changes every
+ * minute so ads sharing a slot take turns (lib/ads.ts pickAd).
+ */
+export async function getRunningAds() {
+  const { now, at } = await clock();
+  const rows = await getRunningAdsCached(at);
+  return {
+    turn: Math.floor(now / 60_000),
+    ads: rows
+      .filter((r) => r.startsAt.getTime() <= now && (!r.endsAt || r.endsAt.getTime() > now))
+      .map((r) => ({ id: r.id, advertiser: r.advertiser, slots: r.slots as AdSlot[], photo: toPhoto(r.photo) }))
+      .filter((r): r is typeof r & { photo: NonNullable<typeof r.photo> } => r.photo !== null),
+  };
+}
+
+async function getRunningAdsCached(at: number) {
+  "use cache: remote";
+  cachedPublic();
+  return getDb()
+    .select({
+      id: ad.id,
+      advertiser: ad.advertiser,
+      slots: ad.slots,
+      startsAt: ad.startsAt,
+      endsAt: ad.endsAt,
+      photo: {
+        r2Key: media.r2Key,
+        variants: media.variants,
+        width: media.width,
+        height: media.height,
+        altText: media.altText,
+        credit: media.credit,
+        caption: media.caption,
+      },
+    })
+    .from(ad)
+    .innerJoin(media, eq(media.id, ad.mediaId))
+    .where(and(eq(ad.paused, false), lte(ad.startsAt, new Date(at)), or(isNull(ad.endsAt), gt(ad.endsAt, new Date(at - 60_000)))))
+    .limit(50);
+}
+
+export type RunningAds = Awaited<ReturnType<typeof getRunningAds>>;

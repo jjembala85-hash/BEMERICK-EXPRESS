@@ -10,6 +10,7 @@ import {
   integer,
   jsonb,
   timestamp,
+  date,
   uniqueIndex,
   index,
   primaryKey,
@@ -364,3 +365,86 @@ export const auditLog = pgTable(
   },
   (t) => [index("audit_created_idx").on(t.createdAt)],
 );
+
+// ---------------------------------------------------------------------------
+// Revenue & engagement (Phase 6, D-044).
+
+/** Where a direct-sold banner can appear. Keep in step with AD_SLOTS in lib/ads.ts. */
+export const adSlot = pgEnum("ad_slot", ["home_top", "home_mid", "story", "section"]);
+
+/** A direct-sold banner, managed in the newsroom (admins only). */
+export const ad = pgTable(
+  "ad",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    advertiser: text("advertiser").notNull(),
+    campaign: text("campaign").notNull(),
+    mediaId: uuid("media_id")
+      .notNull()
+      .references(() => media.id),
+    linkUrl: text("link_url").notNull(),
+    slots: adSlot("slots").array().notNull(),
+    startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
+    endsAt: timestamp("ends_at", { withTimezone: true }),
+    paused: boolean("paused").notNull().default(false),
+    createdBy: text("created_by")
+      .notNull()
+      .references(() => user.id),
+    ...timestamps,
+  },
+  (t) => [index("ad_running_idx").on(t.paused, t.startsAt)],
+);
+
+/** Daily totals per ad, for advertiser reports. No reader data is stored. */
+export const adStat = pgTable(
+  "ad_stat",
+  {
+    adId: uuid("ad_id")
+      .notNull()
+      .references(() => ad.id, { onDelete: "cascade" }),
+    day: date("day").notNull(),
+    views: integer("views").notNull().default(0),
+    clicks: integer("clicks").notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.adId, t.day] })],
+);
+
+/** A reader's browser that asked for breaking-news alerts (Web Push). */
+export const pushSubscription = pgTable("push_subscription", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  endpoint: text("endpoint").notNull().unique(),
+  p256dh: text("p256dh").notNull(),
+  auth: text("auth").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  lastSentAt: timestamp("last_sent_at", { withTimezone: true }),
+});
+
+export const subscriberStatus = pgEnum("subscriber_status", ["pending", "confirmed", "unsubscribed"]);
+
+/** Newsletter subscribers: double opt-in, only the email address is kept. */
+export const newsletterSubscriber = pgTable(
+  "newsletter_subscriber",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    email: text("email").notNull().unique(),
+    status: subscriberStatus("status").notNull().default("pending"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
+    unsubscribedAt: timestamp("unsubscribed_at", { withTimezone: true }),
+  },
+  (t) => [index("newsletter_subscriber_status_idx").on(t.status)],
+);
+
+/** One newsletter edition: chosen stories plus a short intro, sent once. */
+export const newsletterIssue = pgTable("newsletter_issue", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  subject: text("subject").notNull(),
+  intro: text("intro"),
+  articleIds: jsonb("article_ids").$type<string[]>().notNull().default([]),
+  sentAt: timestamp("sent_at", { withTimezone: true }),
+  sentCount: integer("sent_count").notNull().default(0),
+  createdBy: text("created_by")
+    .notNull()
+    .references(() => user.id),
+  ...timestamps,
+});

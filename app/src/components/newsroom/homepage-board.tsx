@@ -73,10 +73,13 @@ export function HomepageBoard({
   stories,
   slots,
   breaking,
+  alertSubscribers,
 }: {
   stories: BoardStory[];
   slots: Record<string, BoardSlot>;
   breaking: { text: string; until: string; story: string | null } | null;
+  /** Browsers signed up for alerts; null when alerts are not set up. */
+  alertSubscribers: number | null;
 }) {
   const [boardState, boardAction, boardPending] = useActionState<BoardState, FormData>(saveBoard, {});
   const [startState, startAction, startPending] = useActionState<BoardState, FormData>(startBreaking, {});
@@ -160,6 +163,15 @@ export function HomepageBoard({
                 ))}
               </select>
             </div>
+            {alertSubscribers !== null && (
+              <label className="flex items-start gap-2 text-sm text-ink">
+                <input type="checkbox" name="sendAlert" className="mt-0.5 size-4 accent-lake-ink" />
+                <span>
+                  Also send an alert to {alertSubscribers.toLocaleString("en-GB")} phone{alertSubscribers === 1 ? "" : "s"} and browser{alertSubscribers === 1 ? "" : "s"}
+                  <span className="block text-xs text-slate">Only for big news: too many alerts and readers switch them off. Tapping it opens the linked story.</span>
+                </span>
+              </label>
+            )}
             <Notice state={startState} />
             <button
               type="submit"

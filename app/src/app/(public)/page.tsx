@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { getHomepage, type StoryCard } from "@/lib/queries/public";
+import { getHomepage, getRunningAds, type StoryCard } from "@/lib/queries/public";
+import { AdBanner } from "@/components/ad-banner";
 import { Kicker, StoryList } from "@/components/story-list";
 import { formatEAT } from "@/lib/dates";
 import { PhotoFrame } from "@/components/photo";
@@ -21,7 +22,7 @@ export default function Home() {
 }
 
 async function FrontPage() {
-  const { lead, top, latest } = await getHomepage();
+  const [{ lead, top, latest }, ads] = await Promise.all([getHomepage(), getRunningAds()]);
   if (!lead) return <ComingSoon />;
 
   return (
@@ -42,6 +43,8 @@ async function FrontPage() {
         {lead.publishedAt && <p className="mt-3 text-sm text-slate">{formatEAT(lead.publishedAt)}</p>}
       </article>
 
+      <AdBanner running={ads} slot="home_top" className="mt-8" />
+
       {top.length > 0 && (
         <section aria-labelledby="top-heading" className="mt-8 border-b border-mist pb-8">
           <h2 id="top-heading" className="text-xs font-semibold uppercase tracking-[0.12em] text-slate">Top stories</h2>
@@ -52,6 +55,8 @@ async function FrontPage() {
           </ul>
         </section>
       )}
+
+      <AdBanner running={ads} slot="home_mid" className="mt-8" />
 
       {latest.length > 0 && (
         <section aria-labelledby="latest-heading" className="mt-8">

@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import { and, desc, eq, gt, isNull } from "drizzle-orm";
+import { and, count, desc, eq, gt, isNull } from "drizzle-orm";
 import { getDb } from "@/db";
-import { article, articleTranslation, breakingAlert, homepageSlot, section } from "@/db/schema";
+import { article, articleTranslation, breakingAlert, homepageSlot, pushSubscription, section } from "@/db/schema";
+import { pushConfigured } from "@/lib/push";
 import { requireStaff } from "@/lib/session";
 import { formatEAT } from "@/lib/dates";
 import { toEATInput } from "@/lib/workflow";
@@ -14,6 +15,7 @@ export default async function HomepageBoardPage() {
   const db = getDb();
   const now = new Date();
 
+  const alertSubscribers = pushConfigured() ? ((await getDb().select({ n: count() }).from(pushSubscription))[0]?.n ?? 0) : null;
   const [stories, slots, [alert]] = await Promise.all([
     db
       .select({
@@ -78,6 +80,7 @@ export default async function HomepageBoardPage() {
           }))}
           slots={slotMap}
           breaking={alert ? { text: alert.text, until: formatEAT(alert.expiresAt), story: alert.story } : null}
+          alertSubscribers={alertSubscribers}
         />
       )}
     </>

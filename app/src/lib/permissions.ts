@@ -16,6 +16,8 @@ export type Permission =
   | "sections.manage"
   | "tags.manage"
   | "inbox.read"
+  | "ads.manage"
+  | "audience.manage"
   | "corrections.manage"
   | "legal.clear"
   | "staff.manage"
@@ -34,12 +36,14 @@ const editorPermissions: Permission[] = [
   "sections.manage",
   "tags.manage",
   "inbox.read",
+  "audience.manage",
   "corrections.manage",
   "audit.view",
 ];
 
 const rolePermissions: Record<Role, readonly Permission[]> = {
-  admin: [...editorPermissions, "article.fast_track", "legal.clear", "staff.manage", "settings.manage"],
+  // Ads are commercial: kept with admins, apart from the editorial team (D-044).
+  admin: [...editorPermissions, "article.fast_track", "legal.clear", "staff.manage", "settings.manage", "ads.manage"],
   editor: editorPermissions,
   writer: ["article.create", "media.upload"],
 };
