@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getAuth } from "@/lib/auth";
 import { cleanAppCode, cleanBackupCode } from "@/lib/two-factor";
+import { clearLoginFailures, loginBlocked, loginKeys, recordLoginFailure } from "@/lib/login-throttle";
 
 export type SignInState = { error?: string };
 
@@ -12,18 +13,28 @@ export async function signIn(_prev: SignInState, formData: FormData): Promise<Si
   const password = String(formData.get("password") ?? "");
   if (!email || !password) return { error: "Enter your email and password." };
 
+  const h = await headers();
+  const ip = (h.get("x-forwarded-for") ?? "").split(",")[0].trim() || h.get("x-real-ip") || "unknown";
+  const keys = loginKeys(email, ip);
+  // Too many failures: refuse without even checking the password, so guessing gains nothing.
+  if (await loginBlocked(keys)) {
+    return { error: "Too many failed attempts. Wait 15 minutes, then try again, or ask an administrator for a new link." };
+  }
+
   let needsCode = false;
   try {
     const result = await getAuth().api.signInEmail({
       body: { email, password },
-      headers: await headers(),
+      headers: h,
     });
     // Two-step sign-in is on: the password was right, now the app code is needed.
     needsCode = Boolean(result && typeof result === "object" && "twoFactorRedirect" in result && result.twoFactorRedirect);
   } catch {
+    await recordLoginFailure(keys);
     // Same message for every failure, so the form never reveals which emails exist.
     return { error: "Incorrect email or password." };
   }
+  await clearLoginFailures(keys);
   redirect(needsCode ? "/newsroom/login/code" : "/newsroom");
 }
 

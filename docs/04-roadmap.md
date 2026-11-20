@@ -120,7 +120,7 @@ Review states and transitions (Architecture §6) · review queue · editorial no
 
 | Done | In progress / next |
 |------|--------------------|
-| ✅ 18 Nov: SEO groundwork: sitemaps, Google News sitemap, RSS, structured data, indexing launch switch (D-037); About, Contact, news tip, Advertise, Latest, Search, draft policies and the newsroom Inbox (D-038); Lighthouse audit, layout-shift fix and caching (D-039); functions moved to Frankfurt and photos served from Vercel's edge (D-040): story LCP 4.3–4.8 s → 3.0–3.6 s on Lighthouse's slow-4G phone test | Security and ops · owner tasks (content, lawyer, domain, Search Console) |
+| ✅ 18 Nov: SEO groundwork: sitemaps, Google News sitemap, RSS, structured data, indexing launch switch (D-037); About, Contact, news tip, Advertise, Latest, Search, draft policies and the newsroom Inbox (D-038); Lighthouse audit, layout-shift fix and caching (D-039); functions moved to Frankfurt and photos served from Vercel's edge (D-040): story LCP 4.3–4.8 s → 3.0–3.6 s on Lighthouse's slow-4G phone test. ✅ 20 Nov: nightly encrypted backups with a restore check, error reporting ready for Sentry (D-041), sign-in hardening, secrets audit and role tests (D-042) | Owner tasks: R2 backup key, Sentry sign-up, domain, 30+ stories, lawyer review, Search Console |
 
 ### 🚀 Milestone 2 · Public launch
 Announce on WhatsApp Channel, TikTok and X.
