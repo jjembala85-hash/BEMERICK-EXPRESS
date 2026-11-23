@@ -134,11 +134,12 @@ export function HomepageBoard({
                   {clearPending ? "Removing…" : "Remove banner now"}
                 </button>
               </form>
-              <div className="mt-2"><Notice state={clearState} /></div>
             </div>
           ) : (
             <p className="mt-2 text-sm text-slate">No banner is showing.</p>
           )}
+          {/* Outside the block above, which disappears with the banner, so the confirmation stays visible. */}
+          <div className="mt-2"><Notice state={clearState} /></div>
 
           <form onSubmit={submitWithoutReset(startAction)} className="mt-4 space-y-3 border-t border-mist pt-4">
             <p className="text-sm font-semibold text-ink">{breaking ? "Replace with a new banner" : "Start a banner"}</p>
