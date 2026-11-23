@@ -1,7 +1,7 @@
 // Newsroom reads for the newsletter (D-044).
-import { and, count, desc, eq, gt, inArray, or } from "drizzle-orm";
+import { and, count, desc, eq, gt, inArray, isNull, or } from "drizzle-orm";
 import { getDb } from "@/db";
-import { article, articleTranslation, newsletterIssue, newsletterSubscriber, section } from "@/db/schema";
+import { article, articleTranslation, newsletterDelivery, newsletterIssue, newsletterSubscriber, section } from "@/db/schema";
 import type { EmailStory } from "@/lib/newsletter";
 
 export async function subscriberCounts() {
@@ -59,9 +59,11 @@ export async function issueStories(ids: string[]) {
   return ids.map((id) => byId.get(id)).filter((s): s is StoryChoice => Boolean(s));
 }
 
-export async function confirmedSubscribers() {
+/** Confirmed subscribers who have not been sent this edition yet. */
+export async function undeliveredSubscribers(issueId: string) {
   return getDb()
     .select({ id: newsletterSubscriber.id, email: newsletterSubscriber.email })
     .from(newsletterSubscriber)
-    .where(eq(newsletterSubscriber.status, "confirmed"));
+    .leftJoin(newsletterDelivery, and(eq(newsletterDelivery.subscriberId, newsletterSubscriber.id), eq(newsletterDelivery.issueId, issueId)))
+    .where(and(eq(newsletterSubscriber.status, "confirmed"), isNull(newsletterDelivery.subscriberId)));
 }

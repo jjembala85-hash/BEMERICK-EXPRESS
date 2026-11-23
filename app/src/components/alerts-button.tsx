@@ -38,7 +38,16 @@ export function AlertsButton({ className = "" }: { className?: string }) {
     if (!ENABLED) return;
     let cancelled = false;
     const first = detect();
-    const check = first === "off" ? currentSubscription().then((s) => (s ? "on" : "off")).catch(() => "off" as const) : Promise.resolve(first);
+    const check =
+      first === "off"
+        ? currentSubscription()
+            .then((s) => {
+              // Save it again (harmless if already saved), in case the first save never reached us.
+              if (s) fetch("/api/push", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(s.toJSON()) }).catch(() => {});
+              return s ? ("on" as const) : ("off" as const);
+            })
+            .catch(() => "off" as const)
+        : Promise.resolve(first);
     check.then((s) => {
       if (!cancelled) setStatus(s);
     });
@@ -63,6 +72,8 @@ export function AlertsButton({ className = "" }: { className?: string }) {
       const sub = (await reg.pushManager.getSubscription()) ?? (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(PUBLIC_KEY) }));
       const res = await fetch("/api/push", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(sub.toJSON()) });
       if (!res.ok) {
+        // Not saved on our side: undo it in the browser too, so "on" always means alerts will arrive.
+        await sub.unsubscribe().catch(() => {});
         const data = await res.json().catch(() => null);
         throw new Error(data?.error ?? "Alerts could not be turned on. Try again.");
       }

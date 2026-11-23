@@ -2,7 +2,7 @@
 
 import { refresh } from "next/cache";
 import { after } from "next/server";
-import { and, eq, inArray, isNull, gt } from "drizzle-orm";
+import { and, eq, inArray, isNull, gt, sql } from "drizzle-orm";
 import { getDb } from "@/db";
 import { article, articleTranslation, auditLog, breakingAlert, homepageSlot, section } from "@/db/schema";
 import { pushConfigured, sendAlertToAll } from "@/lib/push";
@@ -110,13 +110,14 @@ export async function startBreaking(_prev: BoardState, formData: FormData): Prom
   const sendAlert = formData.get("sendAlert") === "on" && pushConfigured();
 
   const now = new Date();
+  const alertId = crypto.randomUUID();
   const expiresAt = new Date(now.getTime() + hours * 3600_000);
   await db.batch([
     db
       .update(breakingAlert)
       .set({ clearedAt: now })
       .where(and(isNull(breakingAlert.clearedAt), gt(breakingAlert.expiresAt, now))),
-    db.insert(breakingAlert).values({ text, articleId, startsAt: now, expiresAt, createdBy: staff.id }),
+    db.insert(breakingAlert).values({ id: alertId, text, articleId, startsAt: now, expiresAt, createdBy: staff.id }),
     db.insert(auditLog).values({
       actorId: staff.id,
       action: "breaking.start",
@@ -125,7 +126,22 @@ export async function startBreaking(_prev: BoardState, formData: FormData): Prom
     }),
   ]);
   publicContentChanged();
-  if (sendAlert) {
+  // One alert per piece of news: if the same headline was already pushed in the last
+  // 10 minutes (a second editor, a double click, a retry), phones are not buzzed again.
+  const claimed = sendAlert
+    ? await db
+        .update(breakingAlert)
+        .set({ alertSentAt: now })
+        .where(
+          and(
+            eq(breakingAlert.id, alertId),
+            sql`not exists (select 1 from ${breakingAlert} b where b.id <> ${alertId} and b.text = ${text} and b.alert_sent_at > now() - interval '10 minutes')`,
+          ),
+        )
+        .returning({ id: breakingAlert.id })
+    : [];
+  const alertSkipped = sendAlert && claimed.length === 0;
+  if (sendAlert && !alertSkipped) {
     // Sent after the reply, so the editor is not kept waiting; the result goes to History.
     after(async () => {
       const result = await sendAlertToAll({ title: "Breaking · BX News", body: text, path });
@@ -136,7 +152,13 @@ export async function startBreaking(_prev: BoardState, formData: FormData): Prom
   }
   refresh();
   return {
-    message: `Breaking banner is live for ${hours} hour${hours === 1 ? "" : "s"}.${sendAlert ? " The alert is being sent; History shows how many it reached." : ""}`,
+    message: `Breaking banner is live for ${hours} hour${hours === 1 ? "" : "s"}.${
+      alertSkipped
+        ? " No second alert was sent: this headline was already sent to phones in the last 10 minutes."
+        : sendAlert
+          ? " The alert is being sent; History shows how many it reached."
+          : ""
+    }`,
   };
 }
 

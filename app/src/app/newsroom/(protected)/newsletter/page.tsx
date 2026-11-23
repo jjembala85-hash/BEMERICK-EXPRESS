@@ -9,12 +9,15 @@ import { mailConfigured } from "@/lib/newsletter";
 import { pushConfigured } from "@/lib/push";
 import { readerSignupsEnabled } from "@/lib/site";
 import { listIssues, subscriberCounts } from "@/lib/queries/newsletter";
+import { pruneUnconfirmed } from "@/lib/newsletter-db";
 import { newIssue } from "./actions";
 
 export const metadata: Metadata = { title: "Newsletter & alerts" };
 
 export default async function NewsletterAdminPage() {
   await requireStaff("audience.manage");
+  // Keeps the privacy promise even when nobody new signs up: unconfirmed sign-ups go after 7 days.
+  await pruneUnconfirmed();
   const [counts, issues, [{ n: alertCount }]] = await Promise.all([
     subscriberCounts(),
     listIssues(),
@@ -65,7 +68,7 @@ export default async function NewsletterAdminPage() {
               <li key={i.id}>
                 <Link href={`/newsroom/newsletter/${i.id}`} className="flex flex-wrap items-center gap-3 px-4 py-3 hover:bg-mist">
                   <span className={`rounded px-2 py-0.5 text-xs font-bold tracking-wider ${i.sentAt ? "bg-lake-ink text-white" : "bg-crane-gold/25 text-ink"}`}>
-                    {i.sentAt ? "SENT" : "DRAFT"}
+                    {i.sentAt ? "SENT" : i.sentCount > 0 ? "PARTLY SENT" : "DRAFT"}
                   </span>
                   <span className="font-semibold text-ink">{i.subject}</span>
                   <span className="ml-auto text-sm text-slate">

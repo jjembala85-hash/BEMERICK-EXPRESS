@@ -282,6 +282,8 @@ export const breakingAlert = pgTable(
     startsAt: timestamp("starts_at", { withTimezone: true }).notNull().defaultNow(),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     clearedAt: timestamp("cleared_at", { withTimezone: true }),
+    /** Set when a phone/browser alert was sent for this banner (stops double sends). */
+    alertSentAt: timestamp("alert_sent_at", { withTimezone: true }),
     createdBy: text("created_by")
       .notNull()
       .references(() => user.id),
@@ -417,6 +419,8 @@ export const pushSubscription = pgTable("push_subscription", {
   auth: text("auth").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   lastSentAt: timestamp("last_sent_at", { withTimezone: true }),
+  /** Failed sends in a row; the sign-up is removed after a few (dead or bogus address). */
+  failures: integer("failures").notNull().default(0),
 });
 
 export const subscriberStatus = pgEnum("subscriber_status", ["pending", "confirmed", "unsubscribed"]);
@@ -431,6 +435,8 @@ export const newsletterSubscriber = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
     unsubscribedAt: timestamp("unsubscribed_at", { withTimezone: true }),
+    /** Last confirmation email, so repeated sign-ups cannot flood an inbox. */
+    lastConfirmSentAt: timestamp("last_confirm_sent_at", { withTimezone: true }),
   },
   (t) => [index("newsletter_subscriber_status_idx").on(t.status)],
 );
@@ -441,10 +447,28 @@ export const newsletterIssue = pgTable("newsletter_issue", {
   subject: text("subject").notNull(),
   intro: text("intro"),
   articleIds: jsonb("article_ids").$type<string[]>().notNull().default([]),
+  /** Set when every confirmed subscriber has been sent the edition. */
   sentAt: timestamp("sent_at", { withTimezone: true }),
   sentCount: integer("sent_count").notNull().default(0),
+  /** While a send is running: stops two editors sending at once. */
+  sendLockedUntil: timestamp("send_locked_until", { withTimezone: true }),
   createdBy: text("created_by")
     .notNull()
     .references(() => user.id),
   ...timestamps,
 });
+
+/** Who has been sent which edition, so an interrupted send can be finished. */
+export const newsletterDelivery = pgTable(
+  "newsletter_delivery",
+  {
+    issueId: uuid("issue_id")
+      .notNull()
+      .references(() => newsletterIssue.id, { onDelete: "cascade" }),
+    subscriberId: uuid("subscriber_id")
+      .notNull()
+      .references(() => newsletterSubscriber.id, { onDelete: "cascade" }),
+    sentAt: timestamp("sent_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.issueId, t.subscriberId] })],
+);

@@ -2,13 +2,13 @@
 
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, count, eq, isNull, lt, or } from "drizzle-orm";
 import { getDb } from "@/db";
-import { auditLog, newsletterIssue } from "@/db/schema";
+import { auditLog, newsletterDelivery, newsletterIssue } from "@/db/schema";
 import { requireStaff } from "@/lib/session";
 import { formatEAT } from "@/lib/dates";
 import { issueEmail, mailConfigured, oneClickUrl, sendEmails } from "@/lib/newsletter";
-import { confirmedSubscribers, issueStories, storyChoices } from "@/lib/queries/newsletter";
+import { issueStories, storyChoices, undeliveredSubscribers } from "@/lib/queries/newsletter";
 
 export type IssueState = { error?: string; message?: string };
 
@@ -44,9 +44,9 @@ export async function saveIssue(_prev: IssueState, formData: FormData): Promise<
   const updated = await getDb()
     .update(newsletterIssue)
     .set({ subject, intro: intro || null, articleIds, updatedAt: new Date() })
-    .where(and(eq(newsletterIssue.id, id), isNull(newsletterIssue.sentAt)))
+    .where(and(eq(newsletterIssue.id, id), isNull(newsletterIssue.sentAt), eq(newsletterIssue.sentCount, 0)))
     .returning({ id: newsletterIssue.id });
-  if (updated.length === 0) return { error: "This edition has already been sent and can no longer be changed." };
+  if (updated.length === 0) return { error: "Sending of this edition has started, so it can no longer be changed." };
   refresh();
   return { message: "Saved. The preview below is up to date." };
 }
@@ -73,53 +73,78 @@ export async function sendTest(_prev: IssueState, formData: FormData): Promise<I
   return { message: `Test sent to ${staff.email}.` };
 }
 
-/** Sends the edition to every confirmed subscriber, once. */
+/**
+ * Sends the edition to every confirmed subscriber who has not had it yet. Each
+ * batch is recorded as it goes, so a send that stops partway (daily email limit,
+ * a timeout) can be finished later with the same button and nobody gets it twice.
+ */
 export async function sendIssue(_prev: IssueState, formData: FormData): Promise<IssueState> {
   const staff = await requireStaff("audience.manage");
   if (!mailConfigured()) return { error: "Email sending is not set up yet." };
   const id = String(formData.get("issueId") ?? "");
   const loaded = await loadIssue(id);
   if (!loaded) return { error: "This edition no longer exists." };
+  if (loaded.issue.sentAt) return { error: "This edition has already been sent." };
   if (loaded.stories.length === 0) return { error: "Choose stories and save first." };
-  const subscribers = await confirmedSubscribers();
-  if (subscribers.length === 0) return { error: "There are no confirmed subscribers yet." };
 
-  // Claim the edition first, so a double click or a second editor cannot send it twice.
+  // One sender at a time: a double click or a second editor waits for the lock.
   const db = getDb();
-  const claimed = await db
+  const now = new Date();
+  const locked = await db
     .update(newsletterIssue)
-    .set({ sentAt: new Date() })
-    .where(and(eq(newsletterIssue.id, id), isNull(newsletterIssue.sentAt)))
+    .set({ sendLockedUntil: new Date(now.getTime() + 5 * 60_000) })
+    .where(and(eq(newsletterIssue.id, id), isNull(newsletterIssue.sentAt), or(isNull(newsletterIssue.sendLockedUntil), lt(newsletterIssue.sendLockedUntil, now))))
     .returning({ id: newsletterIssue.id });
-  if (claimed.length === 0) return { error: "This edition has already been sent." };
+  if (locked.length === 0) return { error: "This edition is being sent right now. Wait a few minutes, then refresh." };
 
   const base = { subject: loaded.issue.subject, intro: loaded.issue.intro, stories: loaded.stories };
-  let accepted = 0;
+  let sentNow = 0;
   let problem: string | null = null;
+  let remaining = 0;
   try {
-    accepted = await sendEmails(subscribers.map((s) => ({ ...issueEmail(base, s.id), to: s.email, unsubscribe: oneClickUrl(s.id) })));
-  } catch (e) {
-    accepted = (e as { accepted?: number }).accepted ?? 0;
-    problem = e instanceof Error ? e.message : "unknown error";
+    const waiting = await undeliveredSubscribers(id);
+    if (waiting.length === 0 && loaded.issue.sentCount === 0) return { error: "There are no confirmed subscribers yet." };
+    remaining = waiting.length;
+    for (let i = 0; i < waiting.length; i += 100) {
+      const batch = waiting.slice(i, i + 100);
+      try {
+        await sendEmails(batch.map((s) => ({ ...issueEmail(base, s.id), to: s.email, unsubscribe: oneClickUrl(s.id) })));
+      } catch (e) {
+        problem = e instanceof Error ? e.message : "unknown error";
+        break;
+      }
+      await db.insert(newsletterDelivery).values(batch.map((s) => ({ issueId: id, subscriberId: s.id }))).onConflictDoNothing();
+      sentNow += batch.length;
+      remaining -= batch.length;
+    }
+  } finally {
+    const [{ n: total }] = await db.select({ n: count() }).from(newsletterDelivery).where(eq(newsletterDelivery.issueId, id));
+    await db.batch([
+      db
+        .update(newsletterIssue)
+        .set({ sentCount: total, sendLockedUntil: null, updatedAt: new Date(), ...(remaining === 0 && !problem && total > 0 ? { sentAt: new Date() } : {}) })
+        .where(eq(newsletterIssue.id, id)),
+      db.insert(auditLog).values({
+        actorId: staff.id,
+        action: "newsletter.send",
+        entity: "newsletter_issue",
+        entityId: id,
+        details: { subject: loaded.issue.subject, sent: sentNow, stillWaiting: remaining, ...(problem ? { problem } : {}) },
+      }),
+    ]);
   }
-  await db.batch([
-    db.update(newsletterIssue).set({ sentCount: accepted, updatedAt: new Date() }).where(eq(newsletterIssue.id, id)),
-    db.insert(auditLog).values({
-      actorId: staff.id,
-      action: "newsletter.send",
-      entity: "newsletter_issue",
-      entityId: id,
-      details: { subject: loaded.issue.subject, sent: accepted, of: subscribers.length, ...(problem ? { problem } : {}) },
-    }),
-  ]);
   refresh();
-  if (problem) return { error: `Sent to ${accepted} of ${subscribers.length}, then the email service stopped: ${problem}` };
-  return { message: `Sent to ${accepted.toLocaleString("en-GB")} subscriber${accepted === 1 ? "" : "s"}.` };
+  if (problem) {
+    return {
+      error: `Sent to ${sentNow}, with ${remaining} still waiting: the email service stopped (${problem}). Press Send again later to finish; nobody gets it twice.`,
+    };
+  }
+  return { message: `Sent to ${sentNow.toLocaleString("en-GB")} subscriber${sentNow === 1 ? "" : "s"}.` };
 }
 
 export async function deleteIssue(formData: FormData) {
   await requireStaff("audience.manage");
   const id = String(formData.get("issueId") ?? "");
-  if (UUID.test(id)) await getDb().delete(newsletterIssue).where(and(eq(newsletterIssue.id, id), isNull(newsletterIssue.sentAt)));
+  if (UUID.test(id)) await getDb().delete(newsletterIssue).where(and(eq(newsletterIssue.id, id), isNull(newsletterIssue.sentAt), eq(newsletterIssue.sentCount, 0)));
   redirect("/newsroom/newsletter");
 }

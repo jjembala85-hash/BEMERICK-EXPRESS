@@ -1,6 +1,6 @@
 // One-click unsubscribe (RFC 8058): email apps such as Gmail POST here when the
 // reader taps their built-in "Unsubscribe" button. The link is signed per reader.
-import { unsubscribeNow } from "@/app/(public)/newsletter/actions";
+import { unsubscribeNow } from "@/lib/newsletter-db";
 
 export async function POST(request: Request) {
   const url = new URL(request.url);

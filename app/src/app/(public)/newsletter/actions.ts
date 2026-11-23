@@ -1,21 +1,27 @@
 "use server";
 
-import { and, eq, lt } from "drizzle-orm";
+import { after } from "next/server";
+import { and, count, eq, gt } from "drizzle-orm";
 import { getDb } from "@/db";
 import { newsletterSubscriber } from "@/db/schema";
 import { checkToken, confirmEmail, mailConfigured, normaliseEmail, sendEmails } from "@/lib/newsletter";
 import { MIN_FILL_MS } from "@/lib/reader-forms";
 import { readerSignupsEnabled } from "@/lib/site";
 import { withinHourlyLimit } from "@/lib/throttle";
+import { pruneUnconfirmed, unsubscribeNow } from "@/lib/newsletter-db";
 
 export type SignupState = { error?: string; sent?: boolean };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+const RESEND_WAIT_MS = 15 * 60_000;
+/** Confirmation emails per day, so sign-up abuse cannot use up the day's email allowance. */
+const MAX_CONFIRMATIONS_PER_DAY = 40;
+
 /**
- * Sign-up, step 1: we email a confirmation link (double opt-in). The answer is
- * the same whether or not the address is already subscribed, so the form never
- * reveals who reads BX News.
+ * Sign-up, step 1: we email a confirmation link (double opt-in). The answer and
+ * the time it takes are the same whether or not the address is already known
+ * (the work happens after the reply), so the form never reveals who reads BX News.
  */
 export async function subscribe(_prev: SignupState, formData: FormData): Promise<SignupState> {
   if (!readerSignupsEnabled() || !mailConfigured()) return { error: "The newsletter is not open for sign-ups yet." };
@@ -24,28 +30,39 @@ export async function subscribe(_prev: SignupState, formData: FormData): Promise
   if (!Number.isFinite(started) || Date.now() - started < MIN_FILL_MS) return { error: "Your sign-up could not be sent. Wait a moment and try again." };
   const email = normaliseEmail(String(formData.get("email") ?? ""));
   if (!email) return { error: "Enter a valid email address." };
-  if (!(await withinHourlyLimit("newsletter", 5))) return { error: "Too many sign-ups from this network. Try again in an hour." };
+  // Generous per network: many readers share one mobile-network address. The real
+  // limits are per email address and per day, below.
+  if (!(await withinHourlyLimit("newsletter", 30))) return { error: "Too many sign-ups from this network. Try again in an hour." };
 
-  const db = getDb();
-  // Unconfirmed sign-ups are removed after 7 days.
-  await db
-    .delete(newsletterSubscriber)
-    .where(and(eq(newsletterSubscriber.status, "pending"), lt(newsletterSubscriber.createdAt, new Date(Date.now() - 7 * 86400_000))));
+  after(async () => {
+    try {
+      const db = getDb();
+      await pruneUnconfirmed();
+      const [existing] = await db.select().from(newsletterSubscriber).where(eq(newsletterSubscriber.email, email)).limit(1);
+      if (existing?.status === "confirmed") return;
+      // One confirmation per address every 15 minutes: nobody's inbox can be flooded.
+      if (existing?.lastConfirmSentAt && Date.now() - existing.lastConfirmSentAt.getTime() < RESEND_WAIT_MS) return;
+      const [{ n }] = await db
+        .select({ n: count() })
+        .from(newsletterSubscriber)
+        .where(gt(newsletterSubscriber.lastConfirmSentAt, new Date(Date.now() - 86400_000)));
+      if (n >= MAX_CONFIRMATIONS_PER_DAY) return;
 
-  const [existing] = await db.select().from(newsletterSubscriber).where(eq(newsletterSubscriber.email, email)).limit(1);
-  if (existing?.status === "confirmed") return { sent: true };
-
-  let id = existing?.id;
-  if (!existing) {
-    [{ id }] = await db.insert(newsletterSubscriber).values({ email }).returning({ id: newsletterSubscriber.id });
-  } else if (existing.status === "unsubscribed") {
-    await db.update(newsletterSubscriber).set({ status: "pending", createdAt: new Date(), unsubscribedAt: null }).where(eq(newsletterSubscriber.id, existing.id));
-  }
-  try {
-    await sendEmails([{ ...confirmEmail(id!), to: email }]);
-  } catch {
-    return { error: "We could not send the confirmation email just now. Please try again later." };
-  }
+      const now = new Date();
+      let id = existing?.id;
+      if (!existing) {
+        [{ id }] = await db.insert(newsletterSubscriber).values({ email, lastConfirmSentAt: now }).returning({ id: newsletterSubscriber.id });
+      } else {
+        await db
+          .update(newsletterSubscriber)
+          .set({ status: "pending", lastConfirmSentAt: now, unsubscribedAt: null, ...(existing.status === "unsubscribed" ? { createdAt: now } : {}) })
+          .where(eq(newsletterSubscriber.id, existing.id));
+      }
+      await sendEmails([{ ...confirmEmail(id!), to: email }]);
+    } catch {
+      // The reader can simply sign up again; nothing to show after the reply.
+    }
+  });
   return { sent: true };
 }
 
@@ -67,16 +84,6 @@ export async function confirmSubscription(_prev: LinkState, formData: FormData):
     return { error: "This link has expired. Sign up again to get a new one." };
   }
   return { done: true };
-}
-
-/** Unsubscribing keeps nothing but the fact that this address said no (so we never email it by mistake). */
-export async function unsubscribeNow(id: string, token: string) {
-  if (!UUID.test(id) || !checkToken("unsubscribe", id, token)) return false;
-  await getDb()
-    .update(newsletterSubscriber)
-    .set({ status: "unsubscribed", unsubscribedAt: new Date() })
-    .where(eq(newsletterSubscriber.id, id));
-  return true;
 }
 
 export async function unsubscribe(_prev: LinkState, formData: FormData): Promise<LinkState> {

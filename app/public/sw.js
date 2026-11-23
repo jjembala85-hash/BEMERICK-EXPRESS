@@ -19,7 +19,7 @@ self.addEventListener("push", (event) => {
       badge: "/icons/icon-192.png",
       tag: data.tag || "bx-breaking",
       renotify: true,
-      data: { url: typeof data.url === "string" && data.url.startsWith("/") ? data.url : "/" },
+      data: { url: typeof data.url === "string" && data.url.startsWith("/") && !data.url.startsWith("//") ? data.url : "/" },
     }),
   );
 });

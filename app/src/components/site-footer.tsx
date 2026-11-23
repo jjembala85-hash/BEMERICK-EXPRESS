@@ -2,6 +2,7 @@ import Link from "next/link";
 import { sections, watchLinks, aboutLinks, policyLinks } from "@/lib/sections";
 import { followLinks, readerSignupsEnabled } from "@/lib/site";
 import { NewsletterForm } from "./newsletter-form";
+import { mailConfigured } from "@/lib/newsletter";
 import { AlertsButton } from "./alerts-button";
 
 
@@ -11,10 +12,12 @@ export function SiteFooter() {
       {readerSignupsEnabled() && (
         <div className="border-b border-white/10">
           <div className="mx-auto grid max-w-6xl gap-6 px-4 py-8 md:grid-cols-2">
-            <div>
-              <p className="mb-2 font-serif text-xl font-bold text-white">The morning briefing</p>
-              <NewsletterForm compact />
-            </div>
+            {mailConfigured() && (
+              <div>
+                <p className="mb-2 font-serif text-xl font-bold text-white">The morning briefing</p>
+                <NewsletterForm compact />
+              </div>
+            )}
             <div>
               <p className="mb-2 font-serif text-xl font-bold text-white">Breaking-news alerts</p>
               <AlertsButton />

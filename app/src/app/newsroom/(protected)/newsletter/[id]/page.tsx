@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { requireStaff } from "@/lib/session";
 import { formatEAT } from "@/lib/dates";
 import { issueEmail, mailConfigured } from "@/lib/newsletter";
-import { getIssue, issueStories, storyChoices, subscriberCounts } from "@/lib/queries/newsletter";
+import { getIssue, issueStories, storyChoices, undeliveredSubscribers } from "@/lib/queries/newsletter";
 import { IssueEditor, SendButtons } from "@/components/newsroom/issue-editor";
 import { deleteIssue } from "../actions";
 
@@ -18,13 +18,14 @@ export default async function IssuePage({ params }: PageProps<"/newsroom/newslet
   if (!UUID.test(id)) notFound();
   const issue = await getIssue(id);
   if (!issue) notFound();
-  const [stories, choices, counts] = await Promise.all([issueStories(issue.articleIds), storyChoices(issue.articleIds), subscriberCounts()]);
+  const [stories, choices, waiting] = await Promise.all([issueStories(issue.articleIds), storyChoices(issue.articleIds), undeliveredSubscribers(issue.id)]);
+  const started = !issue.sentAt && issue.sentCount > 0;
   const preview = issueEmail({ subject: issue.subject, intro: issue.intro, stories }, null);
 
   return (
     <>
       <p className="text-sm"><Link href="/newsroom/newsletter" className="font-semibold text-lake-ink hover:underline">← Newsletter &amp; alerts</Link></p>
-      <h1 className="mt-2 font-serif text-3xl font-bold text-ink">{issue.sentAt ? "Sent edition" : "Edition draft"}</h1>
+      <h1 className="mt-2 font-serif text-3xl font-bold text-ink">{issue.sentAt ? "Sent edition" : started ? "Edition partly sent" : "Edition draft"}</h1>
       {issue.sentAt && (
         <p className="mt-1 text-slate">Sent {formatEAT(issue.sentAt)} to {issue.sentCount.toLocaleString("en-GB")} subscribers.</p>
       )}
@@ -33,6 +34,15 @@ export default async function IssuePage({ params }: PageProps<"/newsroom/newslet
         <div className="space-y-6">
           {issue.sentAt ? (
             <p className="rounded-lg border border-mist bg-surface p-4 text-ink"><strong>{issue.subject}</strong></p>
+          ) : started ? (
+            <section className="space-y-3 rounded-lg border-2 border-crane-gold bg-surface p-5">
+              <p className="text-ink"><strong>{issue.subject}</strong></p>
+              <p className="text-ink">
+                Sent to {issue.sentCount.toLocaleString("en-GB")} so far; {waiting.length.toLocaleString("en-GB")} still waiting. This usually means the
+                day&apos;s email allowance ran out. Send again later to finish: nobody gets it twice.
+              </p>
+              <SendButtons id={issue.id} subscribers={waiting.length} mailReady={mailConfigured()} />
+            </section>
           ) : (
             <>
               <section className="rounded-lg border border-mist bg-surface p-5">
@@ -46,7 +56,7 @@ export default async function IssuePage({ params }: PageProps<"/newsroom/newslet
               </section>
               <section className="rounded-lg border border-mist bg-surface p-5">
                 <h2 className="mb-3 font-serif text-lg font-bold text-ink">Send</h2>
-                <SendButtons id={issue.id} subscribers={counts.confirmed} mailReady={mailConfigured()} />
+                <SendButtons id={issue.id} subscribers={waiting.length} mailReady={mailConfigured()} />
               </section>
               <form action={deleteIssue}>
                 <input type="hidden" name="issueId" value={issue.id} />
