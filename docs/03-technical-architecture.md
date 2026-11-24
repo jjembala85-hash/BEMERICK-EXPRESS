@@ -11,7 +11,7 @@
 |-------|--------|---------------|-----|
 | Web framework | **Next.js** (App Router) + **TypeScript** | Free | One codebase for public site + newsroom; huge ecosystem |
 | Styling | **Tailwind CSS** + brand tokens (+ shadcn/ui for the newsroom) | Free | Fast, consistent, small CSS output |
-| Hosting / CDN | **Cloudflare Workers** via the **OpenNext** adapter | Free plan | Global CDN incl. Africa edge locations, free SSL, DDoS protection, commercial use allowed |
+| Hosting / CDN | **Vercel** (functions in Frankfurt `fra1`) | Hobby (free); **Pro before paid ads** | Chosen in D-035; Cloudflare Workers hosting removed in D-047. Cloudflare is still used for **R2** (photos, backups) |
 | Database | **Neon Serverless PostgreSQL** | Free plan | Real Postgres (D-005), branching for dev/prod, works over HTTP from Workers |
 | Database toolkit | **Drizzle ORM** + drizzle-kit migrations | Free | Type-safe queries, SQL migrations stored in Git |
 | Authentication | **Better Auth** (open source, runs inside our app) | Free | Stores users in **our** Postgres; email+password, 2FA, admin/roles plugin; no vendor lock-in |
@@ -74,6 +74,9 @@ flowchart LR
 ```
 
 ### 3.2 The concern, and how we resolve it
+
+> **Superseded (D-035, D-047):** the site now runs on Vercel and the Cloudflare Workers setup has been removed. This section is kept as the record of the original plan.
+
 Next.js runs on Cloudflare Workers using the **OpenNext Cloudflare adapter** (`@opennextjs/cloudflare`). Two Workers **free-plan** limits matter:
 
 1. **Worker bundle size:** the free plan allows a smaller compressed script size than paid. Large Next.js apps can exceed it.

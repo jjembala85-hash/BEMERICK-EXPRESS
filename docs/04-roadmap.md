@@ -143,7 +143,7 @@ Translation workflow in newsroom → `/lg` routes → Luganda launch with human-
 
 | Risk | Likelihood | Impact | Mitigation |
 |------|-----------|--------|------------|
-| App bundle exceeds the Workers free 3 MB limit (2.14 MB on 15 Nov, growing with each feature) | **High** | Medium | Track size at every deploy; trim dependencies; fallback Workers Paid (~$5/mo) |
+| Vercel Hobby is non-commercial; free limits change | Medium | Medium | Move to Vercel Pro (~$20/mo) before any paid ads (Cloudflare Workers hosting removed, D-047) |
 | Free-tier limits change | Medium | Medium | Verify limits; cost path ready (Architecture §11) |
 | Single developer / limited hours | High | High | Strict scope; Milestone 1 before anything else |
 | Not enough content at launch | Medium | High | Start writing in Phase 3; 30-story buffer |
