@@ -4,9 +4,10 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { sections, getSection } from "@/lib/sections";
 import Link from "next/link";
-import { getLatestStories, getLiveState, getRunningAds } from "@/lib/queries/public";
+import { getLatestStories, getLiveState, getRunningAds, getSectionPin } from "@/lib/queries/public";
+import { BackButton } from "@/components/back-button";
 import { AdBanner } from "@/components/ad-banner";
-import { StoryList } from "@/components/story-list";
+import { PinnedStory, StoryList } from "@/components/story-list";
 
 export function generateStaticParams() {
   return sections.map((s) => ({ section: s.slug }));
@@ -27,6 +28,9 @@ export default async function SectionPage({ params }: PageProps<"/[section]">) {
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-10">
+      <div className="mb-2">
+        <BackButton fallback="/" />
+      </div>
       <div className="border-b-2 border-crane-gold pb-4">
         <h1 className="font-serif text-4xl font-bold text-ink">{section.name}</h1>
         <p className="mt-2 text-slate">{section.description}</p>
@@ -43,12 +47,14 @@ export default async function SectionPage({ params }: PageProps<"/[section]">) {
 
 async function SectionStories({ slug, name }: { slug: string; name: string }) {
   await connection();
-  const [stories, ads] = await Promise.all([getLatestStories({ sectionSlug: slug, limit: 30 }), getRunningAds()]);
-  if (stories.length === 0) {
+  const [latest, ads, pinned] = await Promise.all([getLatestStories({ sectionSlug: slug, limit: 31 }), getRunningAds(), getSectionPin(slug)]);
+  const stories = latest.filter((s) => s.id !== pinned?.id).slice(0, 30);
+  if (stories.length === 0 && !pinned) {
     return <p className="mt-8 text-slate">Stories in {name} will appear here.</p>;
   }
   return (
     <>
+      {pinned && <PinnedStory story={pinned} />}
       <AdBanner running={ads} slot="section" className="mt-6" />
       <StoryList stories={stories} showSection={false} />
     </>

@@ -7,7 +7,7 @@
 // the database about once a minute per region instead of on every view, scheduled
 // stories still appear on time (the minute is part of the cache key), and every
 // newsroom change clears the cache at once (publicContentChanged in lib/cache.ts).
-import { and, asc, desc, eq, gt, inArray, isNull, lte, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, gte, inArray, isNull, lte, or, sql } from "drizzle-orm";
 import { connection } from "next/server";
 import { cacheLife, cacheTag } from "next/cache";
 import { alias } from "drizzle-orm/pg-core";
@@ -24,10 +24,13 @@ import {
   media,
   section,
   liveStream,
+  sectionPin,
   staffProfile,
+  storyView,
   tag,
 } from "@/db/schema";
 import { toPhoto } from "@/lib/media";
+import { eatDay } from "@/lib/ad-stats";
 import { assembleHomepage } from "@/lib/homepage";
 import { PUBLIC_CONTENT_TAG } from "@/lib/cache-tags";
 import type { AdSlot } from "@/lib/ads";
@@ -584,3 +587,85 @@ async function getRunningAdsCached(at: number) {
 }
 
 export type RunningAds = Awaited<ReturnType<typeof getRunningAds>>;
+
+// ---------------------------------------------------------------------------
+// Navigation (D-048): most read, section pins and the headline dropdowns.
+
+/**
+ * The most-read stories of the last two days (EAT), optionally in one section.
+ * Only stories readers can see are counted.
+ */
+export async function getMostRead(options: { sectionSlug?: string; limit?: number } = {}) {
+  const { now, at } = await clock();
+  const limit = options.limit ?? 5;
+  return liveBy(await getMostReadCached(at, options.sectionSlug ?? null, limit + 3), now).slice(0, limit);
+}
+
+async function getMostReadCached(at: number, sectionSlug: string | null, limit: number) {
+  "use cache: remote";
+  cachedPublic();
+  const since = eatDay(new Date(at - 86400_000));
+  const views = sql<number>`sum(${storyView.views})::int`;
+  const rows = await getDb()
+    .select({ ...cardFields, views })
+    .from(storyView)
+    .innerJoin(article, eq(article.id, storyView.articleId))
+    .innerJoin(articleTranslation, and(eq(articleTranslation.articleId, article.id), eq(articleTranslation.lang, "en")))
+    .innerJoin(section, eq(section.id, article.primarySectionId))
+    .leftJoin(media, eq(media.id, article.leadMediaId))
+    .where(and(gte(storyView.day, since), isPublic(at), sectionSlug ? eq(section.slug, sectionSlug) : undefined))
+    .groupBy(article.id, articleTranslation.id, section.id, media.id)
+    .orderBy(desc(views), desc(article.publishedAt))
+    .limit(limit);
+  return rows.map((row) => ({ ...row, photo: toPhoto(row.photo) }));
+}
+
+/** The story pinned to a section, while the pin lasts and the story is public. */
+export async function getSectionPin(sectionSlug: string) {
+  const { now, at } = await clock();
+  const [pin] = liveBy(await getSectionPinCached(at, sectionSlug), now).filter((p) => !p.pinnedUntil || p.pinnedUntil.getTime() > now);
+  return pin ?? null;
+}
+
+async function getSectionPinCached(at: number, sectionSlug: string) {
+  "use cache: remote";
+  cachedPublic();
+  const rows = await getDb()
+    .select({ ...cardFields, pinnedUntil: sectionPin.pinnedUntil })
+    .from(sectionPin)
+    .innerJoin(section, eq(section.id, sectionPin.sectionId))
+    .innerJoin(article, eq(article.id, sectionPin.articleId))
+    .innerJoin(articleTranslation, and(eq(articleTranslation.articleId, article.id), eq(articleTranslation.lang, "en")))
+    .leftJoin(media, eq(media.id, article.leadMediaId))
+    .where(and(eq(section.slug, sectionSlug), isPublic(at)))
+    .limit(1);
+  return rows.map((row) => ({ ...row, photo: toPhoto(row.photo) }));
+}
+
+export type MenuStory = { headline: string; path: string; photo: { src: string; alt: string } | null };
+
+/** What a section's dropdown shows: the pinned story, the latest and the most read, without repeats. */
+export async function getSectionMenu(sectionSlug: string) {
+  const [pinned, latest, mostRead] = await Promise.all([
+    getSectionPin(sectionSlug),
+    getLatestStories({ sectionSlug, limit: 6 }),
+    getMostRead({ sectionSlug, limit: 6 }),
+  ]);
+  const seen = new Set<string>(pinned ? [pinned.id] : []);
+  const pick = <T extends { id: string }>(list: T[], n: number) =>
+    list.filter((s) => !seen.has(s.id) && (seen.add(s.id), true)).slice(0, n);
+  const toMenu = (s: StoryCard): MenuStory => ({
+    headline: s.headline,
+    path: `/${s.sectionSlug}/${s.slug}`,
+    photo: s.photo ? { src: s.photo.src, alt: s.photo.alt } : null,
+  });
+  const lead = pinned ?? latest[0] ?? null;
+  if (lead && !pinned) seen.add(lead.id);
+  return {
+    lead: lead ? { ...toMenu(lead), pinned: Boolean(pinned) } : null,
+    latest: pick(latest, 4).map(toMenu),
+    mostRead: pick(mostRead, 3).map(toMenu),
+  };
+}
+
+export type SectionMenu = Awaited<ReturnType<typeof getSectionMenu>>;

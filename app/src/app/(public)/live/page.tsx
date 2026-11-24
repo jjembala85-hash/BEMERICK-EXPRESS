@@ -39,7 +39,7 @@ function Related({ stream }: { stream: LiveStreamView }) {
 function OnAir({ stream, lead }: { stream: LiveStreamView; lead: boolean }) {
   const Heading = lead ? "h1" : "h2";
   return (
-    <article id={`live-${stream.id}`} className={lead ? "" : "scroll-mt-20 border-t border-mist pt-8"}>
+    <article id={`live-${stream.id}`} className={lead ? "scroll-mt-32" : "scroll-mt-32 border-t border-mist pt-8"}>
       <JsonLd data={liveBroadcast({ title: stream.title, summary: stream.summary, started: stream.startedAt, videoId: stream.youtubeVideoId })} />
       <p className="flex flex-wrap items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-[#c8401f]">
         <span className="size-2 animate-pulse rounded-full bg-[#c8401f] motion-reduce:animate-none" aria-hidden />

@@ -4,7 +4,7 @@ import { refresh } from "next/cache";
 import { after } from "next/server";
 import { and, eq, inArray, isNull, gt, sql } from "drizzle-orm";
 import { getDb } from "@/db";
-import { article, articleTranslation, auditLog, breakingAlert, homepageSlot, section } from "@/db/schema";
+import { article, articleTranslation, auditLog, breakingAlert, homepageSlot, section, sectionPin } from "@/db/schema";
 import { pushConfigured, sendAlertToAll } from "@/lib/push";
 import { requireStaff } from "@/lib/session";
 import { publicContentChanged } from "@/lib/cache";
@@ -182,4 +182,58 @@ export async function clearBreaking(): Promise<BoardState> {
   publicContentChanged();
   refresh();
   return { message: "Breaking banner removed." };
+}
+
+/**
+ * Pins one published story to the top of a section's page and header menu (D-048),
+ * or clears the pin when no story is chosen. Optional end time (EAT).
+ */
+export async function pinSection(_prev: BoardState, formData: FormData): Promise<BoardState> {
+  const staff = await requireStaff("homepage.manage");
+  const sectionId = String(formData.get("sectionId") ?? "");
+  const articleInput = String(formData.get("articleId") ?? "");
+  const untilInput = String(formData.get("until") ?? "");
+  if (!UUID.test(sectionId)) return { error: "Choose a section." };
+  const db = getDb();
+  const [sec] = await db.select({ id: section.id, name: section.name }).from(section).where(eq(section.id, sectionId)).limit(1);
+  if (!sec) return { error: "That section no longer exists." };
+
+  if (!articleInput) {
+    const removed = await db.delete(sectionPin).where(eq(sectionPin.sectionId, sec.id)).returning({ id: sectionPin.articleId });
+    if (removed.length) {
+      await db.insert(auditLog).values({ actorId: staff.id, action: "section.unpin", entity: "article", entityId: removed[0].id, details: { section: sec.name } });
+      publicContentChanged();
+    }
+    refresh();
+    return { message: `Nothing is pinned in ${sec.name} now: it shows the newest stories.` };
+  }
+
+  const [story] = UUID.test(articleInput)
+    ? await db
+        .select({ id: article.id, headline: articleTranslation.headline })
+        .from(article)
+        .innerJoin(articleTranslation, and(eq(articleTranslation.articleId, article.id), eq(articleTranslation.lang, "en")))
+        .where(and(eq(article.id, articleInput), eq(article.status, "published")))
+        .limit(1)
+    : [];
+  if (!story) return { error: "Only a published story can be pinned." };
+  const pinnedUntil = untilInput ? parseEATDateTime(untilInput) : null;
+  if (untilInput && (!pinnedUntil || pinnedUntil <= new Date())) return { error: "The end time must be in the future." };
+
+  await db.batch([
+    db
+      .insert(sectionPin)
+      .values({ sectionId: sec.id, articleId: story.id, pinnedUntil, pinnedBy: staff.id })
+      .onConflictDoUpdate({ target: sectionPin.sectionId, set: { articleId: story.id, pinnedUntil, pinnedBy: staff.id, createdAt: new Date() } }),
+    db.insert(auditLog).values({
+      actorId: staff.id,
+      action: "section.pin",
+      entity: "article",
+      entityId: story.id,
+      details: { section: sec.name, headline: story.headline, ...(pinnedUntil ? { until: pinnedUntil.toISOString() } : {}) },
+    }),
+  ]);
+  publicContentChanged();
+  refresh();
+  return { message: `Pinned in ${sec.name}: “${story.headline}”.` };
 }

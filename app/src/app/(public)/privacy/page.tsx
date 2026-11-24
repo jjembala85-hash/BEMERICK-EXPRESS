@@ -17,6 +17,7 @@ export default function PrivacyPage() {
         <li>You do not need an account, and we do not ask for your name or email to read stories.</li>
         <li>We do not use advertising or tracking cookies, and we do not sell or share data about readers.</li>
         <li>Advertisements are images we host ourselves, not from an ad network. We count how many times each one is seen and tapped, as daily totals only: nothing about you is recorded.</li>
+        <li>For our &ldquo;Most read&rdquo; lists we count how many times each story is read, again as a daily total per story. Nothing about you, your device or your other reading is recorded.</li>
         <li>Your browser remembers a few settings on your own device (for example, whether you closed a breaking-news banner or collapsed the menu). This stays on your device and is not sent to us.</li>
         <li>Like every website, our hosting provider (Vercel) briefly records technical information such as IP addresses to deliver the site and protect it from attacks. We do not use these records to identify readers.</li>
       </ul>

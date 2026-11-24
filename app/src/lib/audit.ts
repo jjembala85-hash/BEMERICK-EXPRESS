@@ -23,6 +23,8 @@ const labels: Record<string, string> = {
   "homepage.update": "changed the homepage",
   "breaking.start": "started a breaking banner",
   "breaking.clear": "removed the breaking banner",
+  "section.pin": "pinned a story in a section",
+  "section.unpin": "removed a section pin",
   "live.schedule": "scheduled a live stream",
   "live.start": "went live",
   "live.end": "ended a live stream",
@@ -69,7 +71,7 @@ export function describeAction(action: string) {
 
 export const AUDIT_AREAS = {
   stories: { label: "Stories", prefixes: ["article."] },
-  homepage: { label: "Homepage, breaking & live", prefixes: ["homepage.", "breaking.", "live.", "push."] },
+  homepage: { label: "Homepage, breaking & live", prefixes: ["homepage.", "breaking.", "live.", "push.", "section."] },
   photos: { label: "Photos", prefixes: ["media."] },
   tags: { label: "Tags", prefixes: ["tag."] },
   inbox: { label: "Inbox", prefixes: ["inbox."] },

@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { getRelatedStories, getRunningAds, getStory } from "@/lib/queries/public";
+import { getMostRead, getRelatedStories, getRunningAds, getStory } from "@/lib/queries/public";
+import { BackButton } from "@/components/back-button";
+import { StoryView } from "@/components/story-view";
 import { AdBanner } from "@/components/ad-banner";
-import { Kicker, StoryList } from "@/components/story-list";
+import { Kicker, MostRead, StoryList } from "@/components/story-list";
 import { RichText } from "@/lib/rich-text";
 import { formatEAT } from "@/lib/dates";
 import { PhotoFrame } from "@/components/photo";
@@ -81,6 +83,10 @@ async function Story({ params }: { params: Props["params"] }) {
   return (
     <article>
       <JsonLd data={structured} />
+      <StoryView id={story.id} />
+      <div className="mb-2">
+        <BackButton fallback={`/${story.sectionSlug}`} />
+      </div>
       <nav aria-label="Breadcrumb" className="mb-4 text-sm text-slate">
         <Link href="/" className="hover:underline">Home</Link>
         <span aria-hidden> › </span>
@@ -174,6 +180,9 @@ async function Story({ params }: { params: Props["params"] }) {
       <Suspense fallback={null}>
         <Related story={story} />
       </Suspense>
+      <Suspense fallback={null}>
+        <MostReadNow exclude={story.id} />
+      </Suspense>
     </article>
   );
 }
@@ -191,3 +200,12 @@ async function Related({ story }: { story: { id: string; sectionSlug: string; se
   );
 }
 
+async function MostReadNow({ exclude }: { exclude: string }) {
+  const stories = (await getMostRead({ limit: 6 })).filter((s) => s.id !== exclude).slice(0, 5);
+  if (stories.length === 0) return null;
+  return (
+    <div className="mt-10">
+      <MostRead stories={stories} />
+    </div>
+  );
+}

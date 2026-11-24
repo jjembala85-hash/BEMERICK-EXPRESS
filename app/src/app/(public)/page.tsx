@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { getHomepage, getRunningAds, type StoryCard } from "@/lib/queries/public";
+import { getHomepage, getMostRead, getRunningAds, type StoryCard } from "@/lib/queries/public";
 import { AdBanner } from "@/components/ad-banner";
-import { Kicker, StoryList } from "@/components/story-list";
+import { Kicker, MostRead, StoryList } from "@/components/story-list";
 import { formatEAT } from "@/lib/dates";
 import { PhotoFrame } from "@/components/photo";
 import { JsonLd } from "@/components/json-ld";
@@ -22,7 +22,7 @@ export default function Home() {
 }
 
 async function FrontPage() {
-  const [{ lead, top, latest }, ads] = await Promise.all([getHomepage(), getRunningAds()]);
+  const [{ lead, top, latest }, ads, mostRead] = await Promise.all([getHomepage(), getRunningAds(), getMostRead({ limit: 5 })]);
   if (!lead) return <ComingSoon />;
 
   return (
@@ -54,6 +54,12 @@ async function FrontPage() {
             ))}
           </ul>
         </section>
+      )}
+
+      {mostRead.length >= 3 && (
+        <div className="mt-8">
+          <MostRead stories={mostRead} />
+        </div>
       )}
 
       <AdBanner running={ads} slot="home_mid" className="mt-8" />

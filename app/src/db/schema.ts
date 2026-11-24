@@ -472,3 +472,34 @@ export const newsletterDelivery = pgTable(
   },
   (t) => [primaryKey({ columns: [t.issueId, t.subscriberId] })],
 );
+
+// ---------------------------------------------------------------------------
+// Navigation (D-048): most-read counts and one pinned story per section.
+
+/** Daily view totals per story (most read). Only counts: no reader data. */
+export const storyView = pgTable(
+  "story_view",
+  {
+    articleId: uuid("article_id")
+      .notNull()
+      .references(() => article.id, { onDelete: "cascade" }),
+    day: date("day").notNull(),
+    views: integer("views").notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.articleId, t.day] }), index("story_view_day_idx").on(t.day)],
+);
+
+/** The story an editor pinned to the top of a section's menu and page. */
+export const sectionPin = pgTable("section_pin", {
+  sectionId: uuid("section_id")
+    .primaryKey()
+    .references(() => section.id, { onDelete: "cascade" }),
+  articleId: uuid("article_id")
+    .notNull()
+    .references(() => article.id, { onDelete: "cascade" }),
+  pinnedUntil: timestamp("pinned_until", { withTimezone: true }),
+  pinnedBy: text("pinned_by")
+    .notNull()
+    .references(() => user.id),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
