@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Newsreader, Instrument_Sans } from "next/font/google";
 import "./globals.css";
 import { indexingEnabled, siteUrl } from "@/lib/site";
+import { adsenseClient } from "@/lib/adsense";
 
 // Brand fonts (docs/01-brand-identity.md §3), self-hosted at build time.
 const newsreader = Newsreader({
@@ -16,6 +17,8 @@ const instrumentSans = Instrument_Sans({
   subsets: ["latin"],
   display: "swap",
 });
+
+const ADSENSE_CLIENT = adsenseClient();
 
 export const metadata: Metadata = {
   // Makes share-image and canonical addresses absolute in link previews.
@@ -33,6 +36,8 @@ export const metadata: Metadata = {
     ? { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large" } }
     : { index: false, follow: false },
   alternates: { types: { "application/rss+xml": [{ url: "/rss.xml", title: "BX News: latest stories" }] } },
+  // Proves site ownership to AdSense (D-049). A meta tag only: no script, no cookies.
+  ...(ADSENSE_CLIENT ? { other: { "google-adsense-account": ADSENSE_CLIENT } } : {}),
 };
 
 export const viewport: Viewport = {

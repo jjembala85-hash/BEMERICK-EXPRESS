@@ -131,7 +131,7 @@ Consent banner → AdSense application · direct ad slots + `/advertise` rate ca
 
 | Done | Next |
 |------|------|
-| ✅ 20 Nov: several live streams by section (D-043); direct ads managed by admins with daily view/click reports, banner positions on `/advertise`; breaking-news alerts (Web Push) sent from the breaking banner; newsletter with double opt-in, editions and one-click unsubscribe (D-044). Sign-ups built but switched off. ✅ 22–24 Nov: full-system check and review fixes (D-045, D-046), Cloudflare hosting removed (D-047), new navigation with most read and section pins (D-048) | Owner: Data Protection Office registration → then `NEXT_PUBLIC_READER_SIGNUPS=on`; domain + Resend key for newsletter sending; Vercel Pro before paid ads. Code: consent banner + AdSense after launch |
+| ✅ 20 Nov: several live streams by section (D-043); direct ads managed by admins with daily view/click reports, banner positions on `/advertise`; breaking-news alerts (Web Push) sent from the breaking banner; newsletter with double opt-in, editions and one-click unsubscribe (D-044). Sign-ups built but switched off. ✅ 22–24 Nov: full-system check and review fixes (D-045, D-046), Cloudflare hosting removed (D-047), new navigation with most read and section pins (D-048). ✅ 26 Nov: consent banner + AdSense built, switched off until the ids are set (D-049) | Owner: Data Protection Office registration → then `NEXT_PUBLIC_READER_SIGNUPS=on`; domain + Resend key for newsletter sending; Vercel Pro before paid ads. After launch: apply for AdSense, then set `NEXT_PUBLIC_ADSENSE_CLIENT` (+ `NEXT_PUBLIC_ADSENSE_SLOT` once approved) and redeploy |
 
 ## Phase 7 · Languages (week 15+)
 

@@ -3,12 +3,19 @@ import { SiteChrome } from "@/components/site-chrome";
 import { SiteFooter } from "@/components/site-footer";
 import { BreakingBanner } from "@/components/breaking-banner";
 import Link from "next/link";
+import { ConsentBanner } from "@/components/consent-banner";
+import { adsenseEnabled } from "@/lib/adsense";
 import { getActiveBreaking, getLiveState } from "@/lib/queries/public";
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
     <SiteChrome
-      footer={<SiteFooter />}
+      footer={
+        <>
+          <SiteFooter />
+          {adsenseEnabled() && <ConsentBanner />}
+        </>
+      }
       banner={
         <Suspense fallback={null}>
           <Breaking />

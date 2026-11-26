@@ -50,6 +50,9 @@ body {
   font-family: var(--font-sans);
 }
 
+/* Google ad box (D-049): hide the whole box, label included, when Google has no ad. */
+.bx-adsense:has(ins[data-ad-status="unfilled"]) { display: none; }
+
 /* Newsroom story editor (Tiptap) */
 .bx-editor p { margin-bottom: 1em; }
 .bx-editor h2 { font-size: 1.5rem; font-weight: 700; line-height: 1.3; margin: 1.4em 0 0.5em; }

@@ -4,7 +4,8 @@ import { followLinks, readerSignupsEnabled } from "@/lib/site";
 import { NewsletterForm } from "./newsletter-form";
 import { mailConfigured } from "@/lib/newsletter";
 import { AlertsButton } from "./alerts-button";
-
+import { CookieSettingsButton } from "./consent-banner";
+import { adsenseEnabled } from "@/lib/adsense";
 
 export function SiteFooter() {
   return (
@@ -65,6 +66,11 @@ export function SiteFooter() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/bx-mark-reverse.svg" alt="" width={24} height={24} />
           <span>© 2026 BEMERICK EXPRESS · News. Insight. Impact.</span>
+          {adsenseEnabled() && (
+            <span className="ml-auto">
+              <CookieSettingsButton />
+            </span>
+          )}
         </div>
       </div>
     </footer>

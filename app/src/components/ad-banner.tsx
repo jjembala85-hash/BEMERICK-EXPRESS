@@ -1,14 +1,21 @@
 import { pickAd, type AdSlot } from "@/lib/ads";
 import type { RunningAds } from "@/lib/queries/public";
+import { adsenseClient, adsenseSlot } from "@/lib/adsense";
 import { AdView } from "./ad-view";
+import { AdsenseUnit } from "./adsense-unit";
 
 /**
- * One direct-sold banner for a slot, or nothing. Clearly labelled, separated
+ * One direct-sold banner for a slot; otherwise a Google ad if AdSense is on and
+ * the reader accepted (D-049); otherwise nothing. Clearly labelled, separated
  * from the journalism, and the link is marked sponsored for search engines.
  */
 export function AdBanner({ running, slot, className = "" }: { running: RunningAds; slot: AdSlot; className?: string }) {
   const ad = pickAd(running.ads, slot, running.turn);
-  if (!ad) return null;
+  if (!ad) {
+    const client = adsenseClient();
+    const unit = adsenseSlot();
+    return client && unit ? <AdsenseUnit client={client} unit={unit} place={slot} className={className} /> : null;
+  }
   return (
     <aside aria-label="Advertisement" className={`border-y border-mist py-3 ${className}`}>
       <p className="mb-2 text-center text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate">Advertisement</p>
