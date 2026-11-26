@@ -65,3 +65,4 @@ Every decision that shapes the product goes here: newest at the bottom, never de
 | Q-003 | Who are the first staff (names, roles) and how many hours a week can development get? | Owner | Phase 1 |
 | Q-004 | Is there a YouTube channel yet? Needed for live and bulletins | Owner | Phase 4 |
 | Q-005 | Final logo: keep the draft or hire a designer once there is revenue? | Owner | Post-launch |
+| Q-006 | Own live studio for live podcasts and shows (`docs/06-live-studio-plan.md`, proposed 26 Nov): approve changing D-003, create the Oracle Cloud account, choose who hosts, how long to keep unpublished recordings, audio first? Owner said on 26 Nov "we shall kick start from there" | Owner | Before studio step S0 |

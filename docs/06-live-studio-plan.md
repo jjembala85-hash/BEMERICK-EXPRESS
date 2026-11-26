@@ -215,7 +215,45 @@ LiveKit runs on our machine. No outside company handles the audio or video, apar
 - **Low-delay viewing** (under 1 second, by WebRTC) for small audiences, e.g. press conferences.
 - **Scheduled re-runs** of popular episodes.
 
-## 14. Sources (checked 26 Nov 2026)
+## 14. Making the live podcasts a success (beyond the code)
+
+The technology is the smaller half. Shows succeed on regular timing, good sound, the right people and getting the word out.
+
+### Before the first public show
+| # | What | Why |
+|---|---|---|
+| 1 | **Pick one show format and a fixed slot** (e.g. "BX Weekly", every Friday 7 PM EAT, 30–45 minutes) with the same segments each week: headlines, main interview, listeners' questions | People come back to a show they can find at the same time every week |
+| 2 | **Record 2–3 pilot episodes first** (not live) and listen back as a team | Fixes sound, pace and nerves before an audience hears them |
+| 3 | **Name, cover art and a short jingle** (Ashurah: cover art 3000×3000 for podcast apps). Jingle: commissioned or royalty-free, **never copyrighted music** | Brand recognition; copyrighted music can get the feed removed and is a legal risk |
+| 4 | **Basic kit for hosts:** USB microphone (about US$30–60 each), wired headphones, a quiet room with soft furnishings | Sound quality matters more than video. Headphones stop echo when guests join remotely |
+| 5 | **Guests must wear headphones** and join from a quiet place; send them a one-page guide with the invite | Most bad online shows come from guests' laptop speakers and noisy rooms |
+| 6 | **Power and network backup:** a UPS or power bank for the router and laptop, and a second data line on a different network (MTN + Airtel) | Load-shedding or one network dropping should not end a live show |
+
+### Running each show
+| # | What | Why |
+|---|---|---|
+| 7 | **Two roles, at least:** a host who talks, and a **producer** who runs the studio panel (admits guests, mutes, watches time and listeners' messages) | The host can't watch the controls and interview at the same time |
+| 8 | **Test 30–60 minutes before** going live: green room, every guest's sound, the reader's player on a phone | Problems found live can't be fixed quietly |
+| 9 | **Same editorial rules as stories** (Editorial policy): brief guests beforehand, right of reply, no unverified accusations. The producer is ready to mute at once | Live has no undo; defamation risk is real, especially near elections |
+| 10 | **Listener questions by WhatsApp** (a dedicated number, or the tip form) read on air | Interaction builds loyalty; it is the "radio phone-in" habit Ugandan audiences already have |
+
+### Growing the audience
+| # | What | Why |
+|---|---|---|
+| 11 | **Announce on the WhatsApp Channel** the day before and at go-live; send a **breaking-style alert "We're live"** to subscribers (D-044) | WhatsApp is where the audience already is |
+| 12 | **Cut 30–60 second clips** of the best moments for TikTok, X and WhatsApp Status after each show (a "make clip" tool can come later) | Clips bring new listeners to the full episode |
+| 13 | **Submit the podcast feed** to Spotify and Apple Podcasts; check whether **Boomplay** and **Audiomack** (popular in Africa) accept it | People listen in the apps they already use |
+| 14 | **Consider a Luganda show early.** Audio suits Luganda well (radio culture) and is cheaper than translating text (Phase 7) | Possibly the fastest way to reach a wider Ugandan audience |
+| 15 | **Mention data costs in promotion:** an hour of audio uses about 30 MB | Data cost is a real barrier for readers in Uganda |
+
+### Measuring and earning
+| # | What | Why |
+|---|---|---|
+| 16 | **Count listeners privately**, like ads and Most read: peak live listeners, episode plays per day, average minutes listened. No personal data | Shows what works without tracking anyone |
+| 17 | **Set goals for the first 3 months** (e.g. 12 episodes on schedule, live listeners growing month by month) and review them at the Sunday weekly review | Keeps the show on track and honest about results |
+| 18 | **One sponsor per show** ("BX Weekly is brought to you by…"), sold like direct ads and labelled. Needs Vercel Pro (commercial use) | Shows can pay for themselves; a sponsor is worth more than a banner |
+
+## 15. Sources (checked 26 Nov 2026)
 
 - Oracle Always Free resources (A1: 1,500 OCPU hours and 9,000 GB hours a month, about 2 cores and 12 GB; 10 TB outbound; idle-reclaim rule): https://docs.oracle.com/en-us/iaas/Content/FreeTier/resourceref.htm
 - Oracle's June 2026 cut from 4 cores / 24 GB, and Pay-As-You-Go reports: https://infoq.com/news/2026/07/oracle-cloud-free-tier-limits/

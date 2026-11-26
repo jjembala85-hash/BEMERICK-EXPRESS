@@ -133,6 +133,10 @@ Consent banner → AdSense application · direct ad slots + `/advertise` rate ca
 |------|------|
 | ✅ 20 Nov: several live streams by section (D-043); direct ads managed by admins with daily view/click reports, banner positions on `/advertise`; breaking-news alerts (Web Push) sent from the breaking banner; newsletter with double opt-in, editions and one-click unsubscribe (D-044). Sign-ups built but switched off. ✅ 22–24 Nov: full-system check and review fixes (D-045, D-046), Cloudflare hosting removed (D-047), new navigation with most read and section pins (D-048). ✅ 26 Nov: consent banner + AdSense built, switched off until the ids are set (D-049) | Owner: Data Protection Office registration → then `NEXT_PUBLIC_READER_SIGNUPS=on`; domain + Resend key for newsletter sending; Vercel Pro before paid ads. After launch: apply for AdSense, then set `NEXT_PUBLIC_ADSENSE_CLIENT` (+ `NEXT_PUBLIC_ADSENSE_SLOT` once approved) and redeploy |
 
+## Phase 6b · Live studio (proposed 26 Nov)
+
+Own live podcasts and shows from a newsroom studio, without YouTube: plan in `docs/06-live-studio-plan.md` (Q-006). Steps: S0 spike (go / no-go) → S1 audio studio → S2 podcast archive → S3 video → S4 hardening. Waiting for the owner's answers in §11 of the plan.
+
 ## Phase 7 · Languages (week 15+)
 
 Translation workflow in newsroom → `/lg` routes → Luganda launch with human-reviewed translations → Swahili.
