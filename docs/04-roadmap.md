@@ -135,7 +135,7 @@ Consent banner → AdSense application · direct ad slots + `/advertise` rate ca
 
 ## Phase 6b · Live studio (proposed 26 Nov)
 
-Own live podcasts and shows from a newsroom studio, without YouTube: plan in `docs/06-live-studio-plan.md` (Q-006). Steps: S0 spike (go / no-go) → S1 audio studio → S2 podcast archive → S3 video → S4 hardening. Waiting for the owner's answers in §11 of the plan.
+Own live podcasts and shows from a newsroom studio, without YouTube: plan in `docs/06-live-studio-plan.md` (Q-006). Steps: S0 spike (go / no-go) → S1 audio studio → S2 podcast archive → S3 video → S4 hardening. **Development starts the week of 30 Nov 2026** (owner, 26 Nov), with S0. Before then: the owner's answers in §11 of the plan and the Oracle Cloud account.
 
 ## Phase 7 · Languages (week 15+)
 
